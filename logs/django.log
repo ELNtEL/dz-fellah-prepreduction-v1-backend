@@ -1,0 +1,113 @@
+INFO 2025-11-17 01:05:05,445 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 01:07:50,887 autoreload Watching for file changes with StatReloader
+INFO 2025-11-17 01:09:18,355 autoreload C:\Users\mouha\Downloads\sqldz\config\config\urls.py changed, reloading.
+INFO 2025-11-17 01:09:19,534 autoreload Watching for file changes with StatReloader
+WARNING 2025-11-17 01:09:23,313 log Not Found: /
+WARNING 2025-11-17 01:09:23,315 basehttp "GET / HTTP/1.1" 404 2451
+WARNING 2025-11-17 01:09:23,751 log Not Found: /favicon.ico
+WARNING 2025-11-17 01:09:23,753 basehttp "GET /favicon.ico HTTP/1.1" 404 2502
+INFO 2025-11-17 01:09:47,680 basehttp "GET /api/products/ HTTP/1.1" 200 89
+INFO 2025-11-17 01:10:41,403 basehttp "POST /api/auth/register/producer/ HTTP/1.1" 201 1101
+WARNING 2025-11-17 01:11:47,852 log Method Not Allowed: /api/auth/register/producer/
+WARNING 2025-11-17 01:11:47,853 basehttp "GET /api/auth/register/producer/ HTTP/1.1" 405 11550
+INFO 2025-11-17 01:11:48,179 basehttp "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 200 121457
+INFO 2025-11-17 01:11:48,213 basehttp "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 200 3385
+INFO 2025-11-17 01:11:48,244 basehttp "GET /static/rest_framework/css/prettify.css HTTP/1.1" 200 817
+INFO 2025-11-17 01:11:48,265 basehttp "GET /static/rest_framework/css/default.css HTTP/1.1" 200 1152
+INFO 2025-11-17 01:11:48,316 basehttp "GET /static/rest_framework/js/default.js HTTP/1.1" 200 1268
+INFO 2025-11-17 01:11:48,316 basehttp "GET /static/rest_framework/js/csrf.js HTTP/1.1" 200 1719
+INFO 2025-11-17 01:11:48,323 basehttp "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 200 3597
+INFO 2025-11-17 01:11:48,336 basehttp "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 200 39680
+INFO 2025-11-17 01:11:48,357 basehttp "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 200 13632
+INFO 2025-11-17 01:11:48,359 basehttp "GET /static/rest_framework/img/grid.png HTTP/1.1" 200 1458
+INFO 2025-11-17 01:11:48,381 basehttp "GET /static/rest_framework/js/jquery-3.5.1.min.js HTTP/1.1" 200 89476
+WARNING 2025-11-17 01:11:48,433 log Not Found: /favicon.ico
+WARNING 2025-11-17 01:11:48,434 basehttp "GET /favicon.ico HTTP/1.1" 404 2502
+WARNING 2025-11-17 01:16:25,225 log Bad Request: /api/auth/register/producer/
+WARNING 2025-11-17 01:16:25,226 basehttp "POST /api/auth/register/producer/ HTTP/1.1" 400 11547
+INFO 2025-11-17 01:20:59,456 basehttp "POST /api/auth/register/producer/ HTTP/1.1" 201 13294
+INFO 2025-12-03 03:28:09,995 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 03:28:41,556 autoreload /home/uyadsb/Desktop/Dev/dzfellah/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-03 03:28:56,488 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 03:29:44,230 autoreload /home/uyadsb/Desktop/Dev/dzfellah/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-03 03:29:44,508 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 03:29:49,690 autoreload /home/uyadsb/Desktop/Dev/dzfellah/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-03 03:29:50,024 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 03:29:54,188 autoreload /home/uyadsb/Desktop/Dev/dzfellah/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-03 03:29:54,483 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 03:32:20,728 autoreload /home/uyadsb/Desktop/Dev/dzfellah/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-03 03:32:21,018 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 03:32:23,169 autoreload /home/uyadsb/Desktop/Dev/dzfellah/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-03 03:32:23,471 autoreload Watching for file changes with StatReloader
+WARNING 2025-12-03 03:32:40,290 log Not Found: /
+WARNING 2025-12-03 03:32:40,291 basehttp "GET / HTTP/1.1" 404 2451
+WARNING 2025-12-03 03:32:40,319 log Not Found: /favicon.ico
+WARNING 2025-12-03 03:32:40,319 basehttp "GET /favicon.ico HTTP/1.1" 404 2502
+INFO 2025-12-03 03:39:03,988 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 03:47:52,493 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 04:01:03,461 autoreload /home/uyadsb/Desktop/Dev/dzfellah/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-03 04:01:03,766 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 04:01:04,943 autoreload /home/uyadsb/Desktop/Dev/dzfellah/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-03 04:03:20,565 autoreload Watching for file changes with StatReloader
+WARNING 2025-12-03 04:03:33,848 log Not Found: /
+WARNING 2025-12-03 04:03:33,848 basehttp "GET / HTTP/1.1" 404 2451
+WARNING 2025-12-03 04:03:33,883 log Not Found: /favicon.ico
+WARNING 2025-12-03 04:03:33,883 basehttp "GET /favicon.ico HTTP/1.1" 404 2502
+INFO 2025-12-03 04:03:38,924 basehttp "GET /admin HTTP/1.1" 301 0
+INFO 2025-12-03 04:03:38,936 basehttp "GET /admin/ HTTP/1.1" 302 0
+INFO 2025-12-03 04:03:38,949 basehttp "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4251
+INFO 2025-12-03 04:03:39,011 basehttp "GET /static/admin/css/base.css HTTP/1.1" 200 22120
+INFO 2025-12-03 04:03:39,011 basehttp "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 200 2810
+INFO 2025-12-03 04:03:39,013 basehttp "GET /static/admin/css/dark_mode.css HTTP/1.1" 200 2808
+INFO 2025-12-03 04:03:39,013 basehttp "GET /static/admin/css/login.css HTTP/1.1" 200 951
+INFO 2025-12-03 04:03:39,013 basehttp "GET /static/admin/js/theme.js HTTP/1.1" 200 1653
+INFO 2025-12-03 04:03:39,014 basehttp "GET /static/admin/css/responsive.css HTTP/1.1" 200 16565
+INFO 2025-12-03 04:03:39,019 basehttp "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 200 3063
+INFO 2025-12-03 04:03:47,302 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4497
+INFO 2025-12-03 04:03:51,616 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4497
+INFO 2025-12-03 04:04:38,541 autoreload Watching for file changes with StatReloader
+INFO 2025-12-03 04:04:44,959 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4497
+INFO 2025-12-03 04:04:48,282 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 200 4497
+INFO 2025-12-03 04:04:58,572 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+INFO 2025-12-03 04:04:58,587 basehttp "GET /admin/ HTTP/1.1" 200 6241
+INFO 2025-12-03 04:04:58,640 basehttp "GET /static/admin/css/dashboard.css HTTP/1.1" 200 441
+INFO 2025-12-03 04:04:58,693 basehttp "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+INFO 2025-12-03 04:04:58,693 basehttp "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+INFO 2025-12-03 04:05:04,508 basehttp "GET /admin/auth/user/ HTTP/1.1" 200 11635
+INFO 2025-12-03 04:05:04,523 basehttp "GET /static/admin/css/changelists.css HTTP/1.1" 200 6878
+INFO 2025-12-03 04:05:04,526 basehttp "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9777
+INFO 2025-12-03 04:05:04,527 basehttp "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+INFO 2025-12-03 04:05:04,527 basehttp "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+INFO 2025-12-03 04:05:04,533 basehttp "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+INFO 2025-12-03 04:05:04,533 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 8634
+INFO 2025-12-03 04:05:04,533 basehttp "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+INFO 2025-12-03 04:05:04,534 basehttp "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+INFO 2025-12-03 04:05:04,536 basehttp "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+INFO 2025-12-03 04:05:04,536 basehttp "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+INFO 2025-12-03 04:05:04,539 basehttp "GET /static/admin/img/search.svg HTTP/1.1" 200 458
+INFO 2025-12-03 04:05:04,567 basehttp "GET /static/admin/img/icon-yes.svg HTTP/1.1" 200 436
+INFO 2025-12-03 04:05:04,590 basehttp "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+INFO 2025-12-03 04:05:04,603 basehttp "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 331
+INFO 2025-12-03 04:05:04,606 basehttp "GET /static/admin/img/sorting-icons.svg HTTP/1.1" 200 1097
+INFO 2025-12-03 04:05:04,606 basehttp "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+INFO 2025-12-03 04:05:09,826 basehttp "GET /admin/auth/group/ HTTP/1.1" 200 7928
+INFO 2025-12-03 04:05:09,848 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 8634
+INFO 2025-12-03 04:05:11,504 basehttp "GET /admin/auth/user/ HTTP/1.1" 200 11635
+INFO 2025-12-03 13:07:42,403 autoreload Watching for file changes with StatReloader
+WARNING 2025-12-03 13:07:50,474 log Not Found: /
+WARNING 2025-12-03 13:07:50,474 basehttp "GET / HTTP/1.1" 404 2451
+INFO 2025-12-03 13:07:55,569 basehttp "GET /api HTTP/1.1" 301 0
+WARNING 2025-12-03 13:07:55,587 log Unauthorized: /api/
+WARNING 2025-12-03 13:07:55,588 basehttp "GET /api/ HTTP/1.1" 401 9786
+INFO 2025-12-03 13:07:55,618 basehttp "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 200 3426
+INFO 2025-12-03 13:07:55,618 basehttp "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 200 121457
+INFO 2025-12-03 13:07:55,619 basehttp "GET /static/rest_framework/css/prettify.css HTTP/1.1" 200 817
+INFO 2025-12-03 13:07:55,618 basehttp "GET /static/rest_framework/css/default.css HTTP/1.1" 200 1152
+INFO 2025-12-03 13:07:55,619 basehttp "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 200 3796
+INFO 2025-12-03 13:07:55,619 basehttp "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 200 87533
+INFO 2025-12-03 13:07:55,625 basehttp "GET /static/rest_framework/js/default.js HTTP/1.1" 200 1268
+INFO 2025-12-03 13:07:55,625 basehttp "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 200 59
+INFO 2025-12-03 13:07:55,626 basehttp "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 200 13632
+INFO 2025-12-03 13:07:55,626 basehttp "GET /static/rest_framework/js/csrf.js HTTP/1.1" 200 1793
+INFO 2025-12-03 13:07:55,626 basehttp "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 200 39680
+INFO 2025-12-03 13:07:55,630 basehttp "GET /static/rest_framework/img/grid.png HTTP/1.1" 200 1458

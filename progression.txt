@@ -1,0 +1,9 @@
+admin panel confirations missed
+
+
+le choix de loquigues commandes: Option 2 (Commande Parent + Sous-Commandes)
+c ta dire que le client commander direct en cas de pannier et apres chaque producteur recever leur commande de son marketplace
+DZ-Fellah est une marketplace multi-vendeurs avec des contraintes uniques :
+- Chaque producteur prépare ses produits indépendamment
+- Les retraits peuvent être chez le producteur ou en point de collecte
+- Chaque producteur a besoin de voir seulement ses commandes

@@ -1,0 +1,30 @@
+#django 
+django
+
+# Django REST Framework
+django-rest-framework
+
+# JWT Authentication
+django-rest-framework-simplejwt
+
+# CORS Headers (for frontend communication)
+django-cors-headers
+
+# Environment variables
+python-decouple # django-decouple
+django-decouple
+
+# Testing
+pytest
+pytest-django
+pytest-cov
+
+# Code Quality
+flake8
+black
+
+# API Documentation (optional but recommended)
+drf-yasg
+
+# Pillow for image handling (if using ImageField later)
+# Pillow
