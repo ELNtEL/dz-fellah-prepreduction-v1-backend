@@ -9,3 +9,12 @@ RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# installer depencies
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# pour executer le server directement
+# CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]

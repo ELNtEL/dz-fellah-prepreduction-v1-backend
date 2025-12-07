@@ -1,18 +1,17 @@
-#django 
+# Django
 django
 
 # Django REST Framework
-django-rest-framework
+djangorestframework
 
 # JWT Authentication
-django-rest-framework-simplejwt
+djangorestframework-simplejwt
 
 # CORS Headers (for frontend communication)
 django-cors-headers
 
 # Environment variables
-python-decouple # django-decouple
-django-decouple
+python-decouple
 
 # Testing
 pytest
@@ -27,4 +26,7 @@ black
 drf-yasg
 
 # Pillow for image handling (if using ImageField later)
-# Pillow
+Pillow
+
+# PostgreSQL adapter
+psycopg2-binary

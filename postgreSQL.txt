@@ -1,0 +1,7 @@
+docker run -d \
+  --name dzfellah-db \
+  -e POSTGRES_DB=dzfellah \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=amdjed\
+  -p 5432:5432 \
+  postgres:15
