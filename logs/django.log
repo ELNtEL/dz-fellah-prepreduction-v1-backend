@@ -111,3 +111,132 @@ INFO 2025-12-03 13:07:55,626 basehttp "GET /static/rest_framework/js/prettify-mi
 INFO 2025-12-03 13:07:55,626 basehttp "GET /static/rest_framework/js/csrf.js HTTP/1.1" 200 1793
 INFO 2025-12-03 13:07:55,626 basehttp "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 200 39680
 INFO 2025-12-03 13:07:55,630 basehttp "GET /static/rest_framework/img/grid.png HTTP/1.1" 200 1458
+INFO 2025-12-09 01:36:46,463 autoreload Watching for file changes with StatReloader
+INFO 2025-12-09 01:57:17,978 autoreload Watching for file changes with StatReloader
+INFO 2025-12-09 02:01:04,591 autoreload Watching for file changes with StatReloader
+INFO 2025-12-09 02:02:01,122 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-09 02:03:11,032 autoreload Watching for file changes with StatReloader
+INFO 2025-12-09 02:03:46,208 autoreload Watching for file changes with StatReloader
+INFO 2025-12-09 02:04:04,655 autoreload Watching for file changes with StatReloader
+INFO 2025-12-09 02:04:12,952 autoreload Watching for file changes with StatReloader
+WARNING 2025-12-09 02:04:21,552 log Method Not Allowed: /api/auth/register/producer/
+WARNING 2025-12-09 02:04:21,553 log "GET /api/auth/register/producer/ HTTP/1.1" 405 11509
+WARNING 2025-12-09 02:04:23,961 log Method Not Allowed: /api/auth/register/producer/
+WARNING 2025-12-09 02:04:23,962 log "GET /api/auth/register/producer/ HTTP/1.1" 405 11509
+WARNING 2025-12-09 02:04:24,535 log Method Not Allowed: /api/auth/register/producer/
+WARNING 2025-12-09 02:04:24,536 log "GET /api/auth/register/producer/ HTTP/1.1" 405 11509
+WARNING 2025-12-09 02:04:24,832 log Method Not Allowed: /api/auth/register/producer/
+WARNING 2025-12-09 02:04:24,833 log "GET /api/auth/register/producer/ HTTP/1.1" 405 11509
+WARNING 2025-12-09 02:04:25,014 log Method Not Allowed: /api/auth/register/producer/
+WARNING 2025-12-09 02:04:25,014 log "GET /api/auth/register/producer/ HTTP/1.1" 405 11509
+WARNING 2025-12-09 02:04:25,201 log Method Not Allowed: /api/auth/register/producer/
+WARNING 2025-12-09 02:04:25,201 log "GET /api/auth/register/producer/ HTTP/1.1" 405 11509
+WARNING 2025-12-09 02:04:32,581 log Not Found: /
+WARNING 2025-12-09 02:04:32,581 log "GET / HTTP/1.1" 404 2449
+WARNING 2025-12-09 02:05:21,784 log Bad Request: /api/auth/register/producer/
+WARNING 2025-12-09 02:05:21,784 log "POST /api/auth/register/producer/ HTTP/1.1" 400 11525
+ERROR 2025-12-09 02:05:29,474 log Internal Server Error: /api/auth/register/producer/
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+psycopg2.errors.UndefinedTable: relation "users" does not exist
+LINE 1: SELECT EXISTS(SELECT 1 FROM users WHERE email = 'user@exampl...
+                                    ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/core/handlers/base.py", line 198, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/viewsets.py", line 125, in view
+    return self.dispatch(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/dzfellah/users/views.py", line 52, in register_producer
+    if queries.email_exists(serializer.validated_data['email']):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/dzfellah/users/queries.py", line 85, in email_exists
+    cursor.execute(sql, [email])
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 122, in execute
+    return super().execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/django/db/utils.py", line 94, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "/usr/local/lib/python3.12/site-packages/django/db/backends/utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+django.db.utils.ProgrammingError: relation "users" does not exist
+LINE 1: SELECT EXISTS(SELECT 1 FROM users WHERE email = 'user@exampl...
+                                    ^
+
+ERROR 2025-12-09 02:05:29,475 log "POST /api/auth/register/producer/ HTTP/1.1" 500 126784
+INFO 2025-12-10 05:36:35,937 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:39:57,557 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:39:58,029 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:39:59,289 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:39:59,721 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:40:01,991 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:40:02,331 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:40:04,499 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:40:04,828 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:40:05,998 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:40:06,307 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:40:08,479 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:40:08,875 autoreload Watching for file changes with StatReloader
+WARNING 2025-12-10 05:49:13,751 log Not Found: /
+WARNING 2025-12-10 05:49:13,752 log "GET / HTTP/1.1" 404 2449
+WARNING 2025-12-10 05:49:13,786 log Not Found: /favicon.ico
+WARNING 2025-12-10 05:49:13,787 log "GET /favicon.ico HTTP/1.1" 404 2500
+WARNING 2025-12-10 05:49:14,780 log Not Found: /
+WARNING 2025-12-10 05:49:14,781 log "GET / HTTP/1.1" 404 2449
+WARNING 2025-12-10 05:49:19,508 log Method Not Allowed: /api/auth/register/producer/
+WARNING 2025-12-10 05:49:19,508 log "GET /api/auth/register/producer/ HTTP/1.1" 405 11509
+INFO 2025-12-10 05:49:19,534 log "GET /static/rest_framework/css/bootstrap.min.css HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,535 log "GET /static/rest_framework/css/bootstrap-tweaks.css HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,537 log "GET /static/rest_framework/css/prettify.css HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,537 log "GET /static/rest_framework/css/default.css HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,537 log "GET /static/rest_framework/js/ajax-form.js HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,538 log "GET /static/rest_framework/js/jquery-3.7.1.min.js HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,538 log "GET /static/rest_framework/js/csrf.js HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,542 log "GET /static/rest_framework/js/load-ajax-form.js HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,542 log "GET /static/rest_framework/js/default.js HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,542 log "GET /static/rest_framework/js/prettify-min.js HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:19,543 log "GET /static/rest_framework/js/bootstrap.min.js HTTP/1.1" 304 0
+INFO 2025-12-10 05:49:47,530 log "POST /api/auth/register/producer/ HTTP/1.1" 201 13317
+INFO 2025-12-10 05:57:35,392 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:57:35,777 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:57:37,956 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:57:38,290 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:57:40,470 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:57:40,773 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 05:57:43,958 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 05:57:44,294 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 06:08:19,137 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
+INFO 2025-12-10 06:08:19,577 autoreload Watching for file changes with StatReloader

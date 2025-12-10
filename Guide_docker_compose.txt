@@ -1,0 +1,181 @@
+================================================================================
+                    DZ-FELLAH PROJECT - QUICK START GUIDE
+================================================================================
+
+📍 PROJECT LOCATION: ~/Desktop/Dev/dzfellah/dzfellah
+
+================================================================================
+                            DAILY USAGE
+================================================================================
+
+🟢 START YOUR PROJECT
+----------------------
+cd ~/Desktop/Dev/dzfellah/dzfellah
+docker compose start
+
+✅ Your API is now running at: http://localhost:8000
+
+
+🔴 STOP YOUR PROJECT
+---------------------
+docker compose stop
+
+
+📊 CHECK STATUS
+---------------
+docker compose ps
+
+
+📝 VIEW LOGS
+------------
+docker compose logs -f          # All logs
+docker compose logs -f web      # Django only
+docker compose logs -f db       # Database only
+
+Press Ctrl+C to exit logs
+
+
+================================================================================
+                        WORKING WITH DJANGO
+================================================================================
+
+🐚 ENTER DJANGO CONTAINER
+--------------------------
+docker compose exec web bash
+
+Inside container, you can run:
+  python manage.py migrate
+  python manage.py createsuperuser
+  python manage.py shell
+  python manage.py makemigrations
+
+Exit container:
+  exit
+
+
+🔧 RUN SINGLE COMMAND (without entering container)
+---------------------------------------------------
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py createsuperuser
+
+
+================================================================================
+                        DATABASE ACCESS
+================================================================================
+
+💾 ENTER POSTGRESQL
+--------------------
+docker compose exec db psql -U postgres -d dzfellah
+
+Inside PostgreSQL:
+  \dt                     # List all tables
+  \d users               # Describe users table
+  SELECT * FROM users;   # Query users
+  \q                     # Exit
+
+
+📤 BACKUP DATABASE
+------------------
+docker compose exec db pg_dump -U postgres dzfellah > backup.sql
+
+
+📥 RESTORE DATABASE
+-------------------
+docker compose exec -T db psql -U postgres -d dzfellah < backup.sql
+
+
+================================================================================
+                        CODE CHANGES
+================================================================================
+
+✏️  EDITING CODE
+----------------
+Edit files normally on your computer.
+Changes sync automatically - no restart needed!
+
+If you change settings.py or add packages:
+  docker compose restart web
+
+
+📦 ADD NEW PYTHON PACKAGE
+--------------------------
+1. Add to requirements.txt
+2. docker compose build web
+3. docker compose up -d
+
+
+================================================================================
+                        TROUBLESHOOTING
+================================================================================
+
+❌ SOMETHING BROKE
+------------------
+# Restart everything:
+docker compose restart
+
+# Rebuild everything:
+docker compose down
+docker compose up -d --build
+
+
+🔍 CHECK WHAT'S WRONG
+---------------------
+docker compose ps              # Check container status
+docker compose logs web        # Check Django errors
+docker compose logs db         # Check database errors
+
+
+🚫 PORT ALREADY IN USE
+----------------------
+# Find and kill process using port:
+sudo lsof -i :8000
+sudo kill -9 <PID>
+
+
+🔄 CLEAN SLATE (⚠️ DELETES DATABASE!)
+--------------------------------------
+docker compose down -v
+docker compose up -d --build
+
+
+================================================================================
+                        USEFUL COMMANDS
+================================================================================
+
+docker compose up -d            # Start in background
+docker compose down             # Stop and remove containers
+docker compose restart web      # Restart Django only
+docker compose restart db       # Restart database only
+docker compose build            # Rebuild images
+docker compose pull             # Update images
+
+
+================================================================================
+                        IMPORTANT NOTES
+================================================================================
+
+✅ Your database data persists between reboots
+✅ Code changes sync automatically
+✅ Always use docker compose commands (not raw docker)
+✅ Check logs if something doesn't work: docker compose logs -f
+
+⚠️  Never run "docker compose down -v" unless you want to delete all data
+⚠️  Always commit your code before major changes
+
+
+================================================================================
+                        QUICK REFERENCE
+================================================================================
+
+START    → docker compose start
+STOP     → docker compose stop
+STATUS   → docker compose ps
+LOGS     → docker compose logs -f
+SHELL    → docker compose exec web bash
+DATABASE → docker compose exec db psql -U postgres -d dzfellah
+RESTART  → docker compose restart
+
+
+================================================================================
+                        THAT'S IT!
+================================================================================

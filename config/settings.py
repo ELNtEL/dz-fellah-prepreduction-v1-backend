@@ -21,6 +21,12 @@ SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here-change-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='localhost,0.0.0.0,127.0.0.1',
+    cast=lambda v: [s.strip() for s in v.split(',')]
+)
+
 
 
 # ==============================================================================
@@ -34,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'config',
     
     # Third party apps
     'rest_framework',
@@ -44,8 +51,8 @@ INSTALLED_APPS = [
     # Your apps
     'users',
     'products',
-    # 'cart',    # TODO: Add when ready
-    # 'orders',  # TODO: Add when ready
+    'cart',    
+    'order', 
 ]
 
 MIDDLEWARE = [
