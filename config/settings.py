@@ -16,14 +16,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ==============================================================================
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here-change-in-production')
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG')
 
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='localhost,0.0.0.0,127.0.0.1',
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 
@@ -46,7 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'drf_yasg',  # API documentation (optional)
+    # 'drf_yasg',  # API documentation (optional)
     
     # Your apps
     'users',
@@ -102,11 +101,11 @@ DATABASES = {
 '''DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='dzfellah'),
-        'USER': config('DB_USER', default='postgres'),
-        'PASSWORD': config('DB_PASSWORD', default='amdjed'),
-        'HOST': config('DB_HOST', default='dzfellah-db'),
-        'PORT': config('DB_PORT', default='5432'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
         'OPTIONS': {
             'client_encoding': 'UTF8',
         },

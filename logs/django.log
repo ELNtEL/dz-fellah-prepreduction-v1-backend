@@ -240,3 +240,4 @@ INFO 2025-12-10 05:57:43,958 autoreload /usr/local/dzfellah/config/settings.py c
 INFO 2025-12-10 05:57:44,294 autoreload Watching for file changes with StatReloader
 INFO 2025-12-10 06:08:19,137 autoreload /usr/local/dzfellah/config/settings.py changed, reloading.
 INFO 2025-12-10 06:08:19,577 autoreload Watching for file changes with StatReloader
+INFO 2025-12-10 14:50:18,676 autoreload Watching for file changes with StatReloader
