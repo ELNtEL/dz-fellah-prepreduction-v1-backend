@@ -241,14 +241,35 @@ class OrderViewSet(viewsets.ViewSet):
             }, status=status.HTTP_404_NOT_FOUND)
 
 
+
+
 class ProducerOrderViewSet(viewsets.ViewSet):
     """
     ViewSet pour gérer les commandes (côté producteur).
     Les producteurs ne voient que leurs sous-commandes.
+    
+    
     """
     
     authentication_classes = [CustomJWTAuthentication]
     permission_classes = [IsAuthenticated, IsProducer]
+    
+    def get_producer_id(self, request):
+        """
+         Safely get producer ID with proper error handling.
+        Returns None if user doesn't have a producer profile.
+        """
+        # Check if the attribute exists
+        if not hasattr(request.user, 'producer_profile'):
+            return None
+        
+        # Check if it's not None
+        producer_profile = request.user.producer_profile
+        if not producer_profile:
+            return None
+        
+        # Safe to access ID now
+        return producer_profile.id
     
     @action(detail=False, methods=['get'])
     def my_orders(self, request):
@@ -256,8 +277,16 @@ class ProducerOrderViewSet(viewsets.ViewSet):
         GET /api/producer-orders/my_orders/
         Liste toutes les sous-commandes du producteur.
         """
+        # ✅ FIXED: Check producer_id safely
+        producer_id = self.get_producer_id(request)
+        
+        if not producer_id:
+            return Response({
+                'error': 'Profil producteur requis'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         sub_orders = SubOrder.objects.filter(
-            producer_id=request.user.producer_profile.id
+            producer_id=producer_id
         ).select_related('parent_order').order_by('-created_at')
         
         serializer = SubOrderSerializer(sub_orders, many=True)
@@ -272,10 +301,18 @@ class ProducerOrderViewSet(viewsets.ViewSet):
         GET /api/producer-orders/{id}/
         Détails d'une sous-commande spécifique.
         """
+        # ✅ FIXED: Check producer_id safely
+        producer_id = self.get_producer_id(request)
+        
+        if not producer_id:
+            return Response({
+                'error': 'Profil producteur requis'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         try:
             sub_order = SubOrder.objects.get(
                 id=pk,
-                producer_id=request.user.producer_profile.id
+                producer_id=producer_id
             )
             serializer = SubOrderSerializer(sub_order)
             
@@ -300,6 +337,14 @@ class ProducerOrderViewSet(viewsets.ViewSet):
             "producer_notes": "Commande prête demain"
         }
         """
+        # ✅ FIXED: Check producer_id safely
+        producer_id = self.get_producer_id(request)
+        
+        if not producer_id:
+            return Response({
+                'error': 'Profil producteur requis'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = UpdateSubOrderStatusSerializer(data=request.data)
         
         if not serializer.is_valid():
@@ -308,7 +353,7 @@ class ProducerOrderViewSet(viewsets.ViewSet):
         try:
             sub_order = SubOrder.objects.get(
                 id=pk,
-                producer_id=request.user.producer_profile.id
+                producer_id=producer_id
             )
             
             # Mettre à jour le statut
@@ -343,10 +388,18 @@ class ProducerOrderViewSet(viewsets.ViewSet):
             "quantity_actual": 2.3
         }
         """
+        # ✅ FIXED: Check producer_id safely
+        producer_id = self.get_producer_id(request)
+        
+        if not producer_id:
+            return Response({
+                'error': 'Profil producteur requis'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         try:
             sub_order = SubOrder.objects.get(
                 id=pk,
-                producer_id=request.user.producer_profile.id
+                producer_id=producer_id
             )
             
             order_item = OrderItem.objects.get(id=item_id, sub_order=sub_order)

@@ -8,6 +8,7 @@ class ProducerProfileSerializer(serializers.Serializer):
     shop_name = serializers.CharField(max_length=255)
     description = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     photo_url = serializers.CharField(max_length=500, allow_null=True, required=False, allow_blank=True)
+    avatar = serializers.CharField(max_length=500, allow_null=True, required=False, allow_blank=True)  # NEW
     address = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     city = serializers.CharField(max_length=100, allow_null=True, required=False, allow_blank=True)
     wilaya = serializers.CharField(max_length=100, allow_null=True, required=False, allow_blank=True)
@@ -20,6 +21,7 @@ class ClientProfileSerializer(serializers.Serializer):
     """Serializer for ClientProfile."""
     
     id = serializers.IntegerField(read_only=True)
+    avatar = serializers.CharField(max_length=500, allow_null=True, required=False, allow_blank=True)  # NEW
     address = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     city = serializers.CharField(max_length=100, allow_null=True, required=False, allow_blank=True)
     wilaya = serializers.CharField(max_length=100, allow_null=True, required=False, allow_blank=True)
@@ -57,6 +59,7 @@ class RegisterProducerSerializer(serializers.Serializer):
     shop_name = serializers.CharField(max_length=255)
     description = serializers.CharField(required=False, allow_blank=True)
     photo_url = serializers.CharField(max_length=500, required=False, allow_blank=True)
+    avatar = serializers.CharField(max_length=500, required=False, allow_blank=True)  # NEW
     address = serializers.CharField(required=False, allow_blank=True)
     city = serializers.CharField(max_length=100, required=False, allow_blank=True)
     wilaya = serializers.CharField(max_length=100, required=False, allow_blank=True)
@@ -87,6 +90,7 @@ class RegisterClientSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     
     # Client profile fields
+    avatar = serializers.CharField(max_length=500, required=False, allow_blank=True)  # NEW
     address = serializers.CharField(required=False, allow_blank=True)
     city = serializers.CharField(max_length=100, required=False, allow_blank=True)
     wilaya = serializers.CharField(max_length=100, required=False, allow_blank=True)

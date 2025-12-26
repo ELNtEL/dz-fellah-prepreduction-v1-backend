@@ -21,10 +21,8 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG')
 
-ALLOWED_HOSTS = config(
-    'ALLOWED_HOSTS',
-    cast=lambda v: [s.strip() for s in v.split(',')]
-)
+# In config/settings.py, find this line:
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 
 
@@ -43,7 +41,7 @@ INSTALLED_APPS = [
     
     # Third party apps
     'rest_framework',
-    'rest_framework_simplejwt',
+    
     'corsheaders',
     # 'drf_yasg',  # API documentation (optional)
     
@@ -182,6 +180,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 
 # ==============================================================================
@@ -197,13 +197,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     # Authentication
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
+    #'DEFAULT_AUTHENTICATION_CLASSES': [
+     #   'rest_framework_simplejwt.authentication.JWTAuthentication',],
     
     # Permissions (default to requiring authentication)
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
     
     # Pagination
@@ -263,12 +262,14 @@ SIMPLE_JWT = {
 # ==============================================================================
 
 # Allow frontend to make requests to backend
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://127.0.0.1:3000',
-    cast=lambda v: [s.strip() for s in v.split(',')]
-)
-
+# Replace this line:
+# Replace this line:
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+]
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_METHODS = [

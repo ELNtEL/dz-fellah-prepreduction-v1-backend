@@ -7,11 +7,14 @@ class ProductListSerializer(serializers.Serializer):
     
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(max_length=255)
-    photo_url = serializers.CharField(max_length=500, allow_null=True, required=False)
+    photo_url = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     price = serializers.DecimalField(max_digits=10, decimal_places=2)
     sale_type = serializers.ChoiceField(choices=['unit', 'weight'])
     stock = serializers.DecimalField(max_digits=10, decimal_places=2)
-    product_type = serializers.ChoiceField(choices=['fresh', 'dry'])
+    product_type = serializers.ChoiceField(choices=[
+    'Vegetables', 'Fruits', 'Dairy', 'Oils', 
+    'Honey', 'Grains', 'Meat', 'Other'
+])
     is_anti_gaspi = serializers.BooleanField()
     harvest_date = serializers.DateField(allow_null=True, required=False)
     producer_id = serializers.IntegerField(read_only=True)
@@ -39,11 +42,14 @@ class ProductDetailSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(max_length=255)
     description = serializers.CharField(allow_null=True, required=False)
-    photo_url = serializers.CharField(max_length=500, allow_null=True, required=False)
+    photo_url = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     sale_type = serializers.ChoiceField(choices=['unit', 'weight'])
     price = serializers.DecimalField(max_digits=10, decimal_places=2)
     stock = serializers.DecimalField(max_digits=10, decimal_places=2)
-    product_type = serializers.ChoiceField(choices=['fresh', 'dry'])
+    product_type = serializers.ChoiceField(choices=[
+    'Vegetables', 'Fruits', 'Dairy', 'Oils', 
+    'Honey', 'Grains', 'Meat', 'Other'
+])
     harvest_date = serializers.DateField(allow_null=True, required=False)
     is_anti_gaspi = serializers.BooleanField()
     created_at = serializers.DateTimeField(read_only=True)
@@ -58,11 +64,14 @@ class ProductCreateUpdateSerializer(serializers.Serializer):
     
     name = serializers.CharField(max_length=255)
     description = serializers.CharField(allow_null=True, required=False, allow_blank=True)
-    photo_url = serializers.CharField(max_length=500, allow_null=True, required=False, allow_blank=True)
+    photo_url = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     sale_type = serializers.ChoiceField(choices=['unit', 'weight'])
     price = serializers.DecimalField(max_digits=10, decimal_places=2)
     stock = serializers.DecimalField(max_digits=10, decimal_places=2)
-    product_type = serializers.ChoiceField(choices=['fresh', 'dry'])
+    product_type = serializers.ChoiceField(choices=[
+    'Vegetables', 'Fruits', 'Dairy', 'Oils', 
+    'Honey', 'Grains', 'Meat', 'Other'
+])
     harvest_date = serializers.DateField(allow_null=True, required=False)
     is_anti_gaspi = serializers.BooleanField(required=False, default=False)
     
@@ -77,9 +86,51 @@ class ProductCreateUpdateSerializer(serializers.Serializer):
         return value
     
     def validate(self, data):
-        # If product is fresh, harvest_date should be provided
-        if data.get('product_type') == 'fresh' and not data.get('harvest_date'):
-            raise serializers.ValidationError({
-                'harvest_date': 'Harvest date is required for fresh products'
-            })
-        return data
+    # Optional: Add validation for fresh products (Vegetables, Fruits, Dairy)
+     fresh_categories = ['Vegetables', 'Fruits', 'Dairy']
+     if data.get('product_type') in fresh_categories and not data.get('harvest_date'):
+         # Optional: You could add a warning here if needed
+        pass
+     return data
+
+
+class SeasonalBasketSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    producer_id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(max_length=255)
+    description = serializers.CharField(required=False, allow_blank=True)
+    
+    discount_percentage = serializers.DecimalField(max_digits=5, decimal_places=2)
+    original_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    discounted_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    delivery_frequency = serializers.ChoiceField(
+        choices=['weekly', 'biweekly', 'monthly'],
+        default='weekly'
+    )
+    is_active = serializers.BooleanField(default=True)
+    subscriber_count = serializers.IntegerField(read_only=True, required=False)
+    product_count = serializers.IntegerField(read_only=True, required=False)
+    producer_shop_name = serializers.CharField(read_only=True, required=False)
+
+
+class BasketProductSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+    quantity = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class ClientSubscriptionSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    basket_id = serializers.IntegerField()
+    status = serializers.ChoiceField(
+        choices=['active', 'paused', 'cancelled'],
+        default='active',
+        read_only=True
+    )
+    delivery_method = serializers.ChoiceField(
+        choices=['pickup_producer', 'pickup_point']
+    )
+    delivery_address = serializers.CharField(required=False, allow_blank=True)
+    pickup_point_id = serializers.CharField(required=False, allow_blank=True)
+    start_date = serializers.DateField(read_only=True)
+    next_delivery_date = serializers.DateField(read_only=True)
+    total_deliveries = serializers.IntegerField(read_only=True)

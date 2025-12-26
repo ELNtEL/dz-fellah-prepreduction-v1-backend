@@ -8,10 +8,15 @@ from .serializers import (
     ProductListSerializer,
     ProductDetailSerializer,
     ProductCreateUpdateSerializer,
-    ProducerInfoSerializer
+    SeasonalBasketSerializer,
+    ClientSubscriptionSerializer,
+    ProducerInfoSerializer,
+    BasketProductSerializer,
+    
 )
 from users.authentication import CustomJWTAuthentication
 from users.permissions import IsProducer
+from users.image_utils import save_base64_image, delete_image  # ← ADD THIS IMPORT
 
 
 class ProductViewSet(viewsets.ViewSet):
@@ -25,11 +30,14 @@ class ProductViewSet(viewsets.ViewSet):
     def list(self, request):
         """
         GET /api/products/
-        Homepage products list with filters.
+        Homepage products list with filters and search.
         """
+        # Get all filters
         product_type = request.query_params.get('product_type')
         is_anti_gaspi = request.query_params.get('is_anti_gaspi')
         is_anti_gaspi_bool = is_anti_gaspi.lower() == 'true' if is_anti_gaspi else None
+        search = request.query_params.get('search')
+        producer_search = request.query_params.get('producer_search')
         
         limit = request.query_params.get('limit', 20)
         try:
@@ -37,17 +45,29 @@ class ProductViewSet(viewsets.ViewSet):
         except:
             limit = 20
         
-        products = queries.get_home_products(
-            product_type=product_type,
-            is_anti_gaspi=is_anti_gaspi_bool,
-            limit=limit
-        )
+        # Use advanced search if search parameters provided
+        if search or producer_search:
+            products = queries.search_products_advanced(
+                search=search,
+                producer_search=producer_search,
+                product_type=product_type,
+                is_anti_gaspi=is_anti_gaspi_bool,
+                limit=limit
+            )
+        else:
+            products = queries.get_home_products(
+                product_type=product_type,
+                is_anti_gaspi=is_anti_gaspi_bool,
+                limit=limit
+            )
         
         serializer = ProductListSerializer(products, many=True)
         
         return Response({
             'count': len(serializer.data),
             'filters': {
+                'search': search,
+                'producer_search': producer_search,
                 'product_type': product_type,
                 'is_anti_gaspi': is_anti_gaspi,
                 'limit': limit
@@ -257,11 +277,21 @@ class MyProductViewSet(viewsets.ViewSet):
         serializer = ProductCreateUpdateSerializer(data=request.data)
         
         if serializer.is_valid():
+            # Handle image upload
+            photo_url = None
+            if 'photo_url' in serializer.validated_data and serializer.validated_data['photo_url']:
+                # Save base64 image to media/products/
+                photo_url = save_base64_image(
+                    serializer.validated_data['photo_url'], 
+                    folder='products'
+                )
+                print(f"✅ Product image saved: {photo_url}")  # Debug log
+            
             product = queries.create_product(
                 producer_id=request.user.producer_profile.id,
                 name=serializer.validated_data['name'],
                 description=serializer.validated_data.get('description'),
-                photo_url=serializer.validated_data.get('photo_url'),
+                photo_url=photo_url,  # ← Use saved path
                 sale_type=serializer.validated_data['sale_type'],
                 price=serializer.validated_data['price'],
                 stock=serializer.validated_data['stock'],
@@ -317,12 +347,25 @@ class MyProductViewSet(viewsets.ViewSet):
         serializer = ProductCreateUpdateSerializer(data=request.data)
         
         if serializer.is_valid():
+            # Handle image upload
+            photo_url = serializer.validated_data.get('photo_url')
+            
+            # If new base64 image provided, save it and delete old one
+            if photo_url and (photo_url.startswith('data:image/') or ',' in photo_url):
+                # Delete old image
+                if product.get('photo_url'):
+                    delete_image(product['photo_url'])
+                
+                # Save new image
+                photo_url = save_base64_image(photo_url, folder='products')
+                print(f"✅ Product image updated: {photo_url}")
+            
             updated = queries.update_product(
                 product_id=pk,
                 producer_id=request.user.producer_profile.id,
                 name=serializer.validated_data['name'],
                 description=serializer.validated_data.get('description'),
-                photo_url=serializer.validated_data.get('photo_url'),
+                photo_url=photo_url,
                 sale_type=serializer.validated_data['sale_type'],
                 price=serializer.validated_data['price'],
                 stock=serializer.validated_data['stock'],
@@ -355,6 +398,23 @@ class MyProductViewSet(viewsets.ViewSet):
         serializer = ProductCreateUpdateSerializer(data=request.data, partial=True)
         
         if serializer.is_valid():
+            # Handle image upload if provided
+            if 'photo_url' in serializer.validated_data:
+                photo_url = serializer.validated_data['photo_url']
+                
+                # If new base64 image, save it
+                if photo_url and (photo_url.startswith('data:image/') or ',' in photo_url):
+                    # Delete old image
+                    if product.get('photo_url'):
+                        delete_image(product['photo_url'])
+                    
+                    # Save new image
+                    serializer.validated_data['photo_url'] = save_base64_image(
+                        photo_url, 
+                        folder='products'
+                    )
+                    print(f"✅ Product image updated: {serializer.validated_data['photo_url']}")
+            
             updated = queries.partial_update_product(
                 product_id=pk,
                 producer_id=request.user.producer_profile.id,
@@ -375,6 +435,14 @@ class MyProductViewSet(viewsets.ViewSet):
         DELETE /api/my-products/{id}/
         Delete a product.
         """
+        # Get product to delete its image
+        product = queries.get_my_product_detail(pk, request.user.producer_profile.id)
+        
+        if product and product.get('photo_url'):
+            # Delete image file
+            delete_image(product['photo_url'])
+            print(f"🗑️ Deleted product image: {product['photo_url']}")
+        
         product_name = queries.delete_product(
             pk,
             request.user.producer_profile.id
@@ -413,3 +481,749 @@ class MyProductViewSet(viewsets.ViewSet):
                 'is_anti_gaspi': result['is_anti_gaspi']
             }
         })
+class SeasonalBasketViewSet(viewsets.ViewSet):
+    """
+    ViewSet for seasonal basket operations.
+    """
+    
+    # Public endpoints (browsing baskets)
+    permission_classes = [AllowAny]
+    
+    def list(self, request):
+        """
+        GET /api/seasonal-baskets/
+        List all active seasonal baskets.
+        """
+        search = request.query_params.get('search')
+        producer_id = request.query_params.get('producer_id')
+        limit = int(request.query_params.get('limit', 20))
+        
+        baskets = queries.get_all_active_baskets(
+            search=search,
+            producer_id=producer_id,
+            limit=limit
+        )
+        
+        serializer = SeasonalBasketSerializer(baskets, many=True)
+        
+        return Response({
+            'count': len(serializer.data),
+            'baskets': serializer.data
+        })
+    
+    def retrieve(self, request, pk=None):
+        """
+        GET /api/seasonal-baskets/{id}/
+        Get basket details with products.
+        """
+        basket = queries.get_basket_with_products(pk)
+        
+        if not basket:
+            return Response({
+                'error': 'Basket not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = SeasonalBasketSerializer(basket)
+        return Response(serializer.data)
+
+
+class MySeasonalBasketViewSet(viewsets.ViewSet):
+    """
+    ViewSet for producer basket management.
+    Requires authentication and IsProducer permission.
+    """
+    
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsProducer]
+    
+    def list(self, request):
+        """
+        GET /api/my-seasonal-baskets/
+        Get all baskets for authenticated producer.
+        """
+        baskets = queries.get_producer_baskets(
+            request.user.producer_profile.id
+        )
+        
+        serializer = SeasonalBasketSerializer(baskets, many=True)
+        
+        return Response({
+            'count': len(serializer.data),
+            'baskets': serializer.data
+        })
+    
+    def create(self, request):
+        """
+        POST /api/my-seasonal-baskets/
+        Create a new seasonal basket.
+        """
+        serializer = SeasonalBasketSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            basket = queries.create_seasonal_basket(
+                producer_id=request.user.producer_profile.id,
+                name=serializer.validated_data['name'],
+                description=serializer.validated_data.get('description'),
+                discount_percentage=serializer.validated_data['discount_percentage'],
+                original_price=serializer.validated_data['original_price'],
+                delivery_frequency=serializer.validated_data.get('delivery_frequency', 'weekly')
+            )
+            
+            result_serializer = SeasonalBasketSerializer(basket)
+            
+            return Response({
+                'message': 'Basket created successfully',
+                'basket': result_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def retrieve(self, request, pk=None):
+        """
+        GET /api/my-seasonal-baskets/{id}/
+        Get basket details with products.
+        """
+        basket = queries.get_basket_with_products(pk)
+        
+        if not basket or basket['producer_id'] != request.user.producer_profile.id:
+            return Response({
+                'error': 'Basket not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = SeasonalBasketSerializer(basket)
+        return Response(serializer.data)
+    
+    def update(self, request, pk=None):
+        """
+        PUT/PATCH /api/my-seasonal-baskets/{id}/
+        Update basket.
+        """
+        serializer = SeasonalBasketSerializer(data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            updates = dict(serializer.validated_data)
+            
+            basket = queries.update_basket(
+                pk,
+                request.user.producer_profile.id,
+                **updates
+            )
+            
+            if not basket:
+                return Response({
+                    'error': 'Basket not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            result_serializer = SeasonalBasketSerializer(basket)
+            
+            return Response({
+                'message': 'Basket updated successfully',
+                'basket': result_serializer.data
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def destroy(self, request, pk=None):
+        """
+        DELETE /api/my-seasonal-baskets/{id}/
+        Delete basket.
+        """
+        basket_name = queries.delete_basket(pk, request.user.producer_profile.id)
+        
+        if basket_name:
+            return Response({
+                'message': f'Basket "{basket_name}" deleted successfully'
+            }, status=status.HTTP_204_NO_CONTENT)
+        
+        return Response({
+            'error': 'Basket not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'], url_path='add-product')
+    def add_product(self, request, pk=None):
+        """
+        POST /api/my-seasonal-baskets/{id}/add-product/
+        Add product to basket.
+        """
+        serializer = BasketProductSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            # Verify basket ownership
+            basket = queries.get_basket_with_products(pk)
+            if not basket or basket['producer_id'] != request.user.producer_profile.id:
+                return Response({
+                    'error': 'Basket not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            result = queries.add_product_to_basket(
+                pk,
+                serializer.validated_data['product_id'],
+                serializer.validated_data['quantity']
+            )
+            
+            return Response({
+                'message': 'Product added to basket',
+                'basket_product': result
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['delete'], url_path='remove-product/(?P<product_id>[^/.]+)')
+    def remove_product(self, request, pk=None, product_id=None):
+        """
+        DELETE /api/my-seasonal-baskets/{id}/remove-product/{product_id}/
+        Remove product from basket.
+        """
+        # Verify basket ownership
+        basket = queries.get_basket_with_products(pk)
+        if not basket or basket['producer_id'] != request.user.producer_profile.id:
+            return Response({
+                'error': 'Basket not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        success = queries.remove_product_from_basket(pk, product_id)
+        
+        if success:
+            return Response({
+                'message': 'Product removed from basket'
+            })
+        
+        return Response({
+            'error': 'Product not found in basket'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['get'], url_path='subscribers')
+    def subscribers(self, request, pk=None):
+        """
+        GET /api/my-seasonal-baskets/{id}/subscribers/
+        Get list of subscribers.
+        """
+        subscribers = queries.get_basket_subscribers(
+            pk,
+            request.user.producer_profile.id
+        )
+        
+        return Response({
+            'count': len(subscribers),
+            'subscribers': subscribers
+        })
+
+
+class MySubscriptionViewSet(viewsets.ViewSet):
+    """
+    ViewSet for client subscription management.
+    Requires authentication.
+    """
+    
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def list(self, request):
+        """
+        GET /api/my-subscriptions/
+        Get all subscriptions for authenticated client.
+        """
+        # Get client profile
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        if user_data['user_type'] != 'client':
+            return Response({
+                'error': 'Only clients can have subscriptions'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        status_filter = request.query_params.get('status')
+        
+        subscriptions = queries.get_client_subscriptions(
+            user_data['client_profile']['id'],
+            status=status_filter
+        )
+        
+        serializer = ClientSubscriptionSerializer(subscriptions, many=True)
+        
+        return Response({
+            'count': len(serializer.data),
+            'subscriptions': serializer.data
+        })
+    
+    def create(self, request):
+        """
+        POST /api/my-subscriptions/
+        Create a new subscription.
+        """
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        if user_data['user_type'] != 'client':
+            return Response({
+                'error': 'Only clients can subscribe'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = ClientSubscriptionSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            subscription = queries.create_subscription(
+                client_id=user_data['client_profile']['id'],
+                basket_id=serializer.validated_data['basket_id'],
+                delivery_method=serializer.validated_data['delivery_method'],
+                delivery_address=serializer.validated_data.get('delivery_address'),
+                pickup_point_id=serializer.validated_data.get('pickup_point_id')
+            )
+            
+            result_serializer = ClientSubscriptionSerializer(subscription)
+            
+            return Response({
+                'message': 'Subscription created successfully',
+                'subscription': result_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'], url_path='pause')
+    def pause(self, request, pk=None):
+        """
+        POST /api/my-subscriptions/{id}/pause/
+        Pause subscription.
+        """
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        result = queries.update_subscription_status(
+            pk,
+            user_data['client_profile']['id'],
+            'paused'
+        )
+        
+        if result:
+            return Response({
+                'message': 'Subscription paused',
+                'subscription': result
+            })
+        
+        return Response({
+            'error': 'Subscription not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        """
+        POST /api/my-subscriptions/{id}/cancel/
+        Cancel subscription.
+        """
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        result = queries.update_subscription_status(
+            pk,
+            user_data['client_profile']['id'],
+            'cancelled'
+        )
+        
+        if result:
+            return Response({
+                'message': 'Subscription cancelled',
+                'subscription': result
+            })
+        
+        return Response({
+            'error': 'Subscription not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'], url_path='reactivate')
+    def reactivate(self, request, pk=None):
+        """
+        POST /api/my-subscriptions/{id}/reactivate/
+        Reactivate paused subscription.
+        """
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        result = queries.update_subscription_status(
+            pk,
+            user_data['client_profile']['id'],
+            'active'
+        )
+        
+        if result:
+            return Response({
+                'message': 'Subscription reactivated',
+                'subscription': result
+            })
+        
+        return Response({
+            'error': 'Subscription not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+class SeasonalBasketViewSet(viewsets.ViewSet):
+    """
+    ViewSet for seasonal basket operations.
+    """
+    
+    # Public endpoints (browsing baskets)
+    permission_classes = [AllowAny]
+    
+    def list(self, request):
+        """
+        GET /api/seasonal-baskets/
+        List all active seasonal baskets.
+        """
+        search = request.query_params.get('search')
+        producer_id = request.query_params.get('producer_id')
+        limit = int(request.query_params.get('limit', 20))
+        
+        baskets = queries.get_all_active_baskets(
+            search=search,
+            producer_id=producer_id,
+            limit=limit
+        )
+        
+        serializer = SeasonalBasketSerializer(baskets, many=True)
+        
+        return Response({
+            'count': len(serializer.data),
+            'baskets': serializer.data
+        })
+    
+    def retrieve(self, request, pk=None):
+        """
+        GET /api/seasonal-baskets/{id}/
+        Get basket details with products.
+        """
+        basket = queries.get_basket_with_products(pk)
+        
+        if not basket:
+            return Response({
+                'error': 'Basket not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = SeasonalBasketSerializer(basket)
+        return Response(serializer.data)
+
+
+class MySeasonalBasketViewSet(viewsets.ViewSet):
+    """
+    ViewSet for producer basket management.
+    Requires authentication and IsProducer permission.
+    """
+    
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated, IsProducer]
+    
+    def list(self, request):
+        """
+        GET /api/my-seasonal-baskets/
+        Get all baskets for authenticated producer.
+        """
+        baskets = queries.get_producer_baskets(
+            request.user.producer_profile.id
+        )
+        
+        serializer = SeasonalBasketSerializer(baskets, many=True)
+        
+        return Response({
+            'count': len(serializer.data),
+            'baskets': serializer.data
+        })
+    
+    def create(self, request):
+        """
+        POST /api/my-seasonal-baskets/
+        Create a new seasonal basket.
+        """
+        serializer = SeasonalBasketSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            basket = queries.create_seasonal_basket(
+                producer_id=request.user.producer_profile.id,
+                name=serializer.validated_data['name'],
+                description=serializer.validated_data.get('description'),
+                discount_percentage=serializer.validated_data['discount_percentage'],
+                original_price=serializer.validated_data['original_price'],
+                delivery_frequency=serializer.validated_data.get('delivery_frequency', 'weekly')
+            )
+            
+            result_serializer = SeasonalBasketSerializer(basket)
+            
+            return Response({
+                'message': 'Basket created successfully',
+                'basket': result_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def retrieve(self, request, pk=None):
+        """
+        GET /api/my-seasonal-baskets/{id}/
+        Get basket details with products.
+        """
+        basket = queries.get_basket_with_products(pk)
+        
+        if not basket or basket['producer_id'] != request.user.producer_profile.id:
+            return Response({
+                'error': 'Basket not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = SeasonalBasketSerializer(basket)
+        return Response(serializer.data)
+    
+    def update(self, request, pk=None):
+        """
+        PUT/PATCH /api/my-seasonal-baskets/{id}/
+        Update basket.
+        """
+        serializer = SeasonalBasketSerializer(data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            updates = dict(serializer.validated_data)
+            
+            basket = queries.update_basket(
+                pk,
+                request.user.producer_profile.id,
+                **updates
+            )
+            
+            if not basket:
+                return Response({
+                    'error': 'Basket not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            result_serializer = SeasonalBasketSerializer(basket)
+            
+            return Response({
+                'message': 'Basket updated successfully',
+                'basket': result_serializer.data
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def destroy(self, request, pk=None):
+        """
+        DELETE /api/my-seasonal-baskets/{id}/
+        Delete basket.
+        """
+        basket_name = queries.delete_basket(pk, request.user.producer_profile.id)
+        
+        if basket_name:
+            return Response({
+                'message': f'Basket "{basket_name}" deleted successfully'
+            }, status=status.HTTP_204_NO_CONTENT)
+        
+        return Response({
+            'error': 'Basket not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'], url_path='add-product')
+    def add_product(self, request, pk=None):
+        """
+        POST /api/my-seasonal-baskets/{id}/add-product/
+        Add product to basket.
+        """
+        serializer = BasketProductSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            # Verify basket ownership
+            basket = queries.get_basket_with_products(pk)
+            if not basket or basket['producer_id'] != request.user.producer_profile.id:
+                return Response({
+                    'error': 'Basket not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            result = queries.add_product_to_basket(
+                pk,
+                serializer.validated_data['product_id'],
+                serializer.validated_data['quantity']
+            )
+            
+            return Response({
+                'message': 'Product added to basket',
+                'basket_product': result
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['delete'], url_path='remove-product/(?P<product_id>[^/.]+)')
+    def remove_product(self, request, pk=None, product_id=None):
+        """
+        DELETE /api/my-seasonal-baskets/{id}/remove-product/{product_id}/
+        Remove product from basket.
+        """
+        # Verify basket ownership
+        basket = queries.get_basket_with_products(pk)
+        if not basket or basket['producer_id'] != request.user.producer_profile.id:
+            return Response({
+                'error': 'Basket not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        success = queries.remove_product_from_basket(pk, product_id)
+        
+        if success:
+            return Response({
+                'message': 'Product removed from basket'
+            })
+        
+        return Response({
+            'error': 'Product not found in basket'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['get'], url_path='subscribers')
+    def subscribers(self, request, pk=None):
+        """
+        GET /api/my-seasonal-baskets/{id}/subscribers/
+        Get list of subscribers.
+        """
+        subscribers = queries.get_basket_subscribers(
+            pk,
+            request.user.producer_profile.id
+        )
+        
+        return Response({
+            'count': len(subscribers),
+            'subscribers': subscribers
+        })
+
+
+class MySubscriptionViewSet(viewsets.ViewSet):
+    """
+    ViewSet for client subscription management.
+    Requires authentication.
+    """
+    
+    authentication_classes = [CustomJWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def list(self, request):
+        """
+        GET /api/my-subscriptions/
+        Get all subscriptions for authenticated client.
+        """
+        # Get client profile
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        if user_data['user_type'] != 'client':
+            return Response({
+                'error': 'Only clients can have subscriptions'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        status_filter = request.query_params.get('status')
+        
+        subscriptions = queries.get_client_subscriptions(
+            user_data['client_profile']['id'],
+            status=status_filter
+        )
+        
+        serializer = ClientSubscriptionSerializer(subscriptions, many=True)
+        
+        return Response({
+            'count': len(serializer.data),
+            'subscriptions': serializer.data
+        })
+    
+    def create(self, request):
+        """
+        POST /api/my-subscriptions/
+        Create a new subscription.
+        """
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        if user_data['user_type'] != 'client':
+            return Response({
+                'error': 'Only clients can subscribe'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = ClientSubscriptionSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            subscription = queries.create_subscription(
+                client_id=user_data['client_profile']['id'],
+                basket_id=serializer.validated_data['basket_id'],
+                delivery_method=serializer.validated_data['delivery_method'],
+                delivery_address=serializer.validated_data.get('delivery_address'),
+                pickup_point_id=serializer.validated_data.get('pickup_point_id')
+            )
+            
+            result_serializer = ClientSubscriptionSerializer(subscription)
+            
+            return Response({
+                'message': 'Subscription created successfully',
+                'subscription': result_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'], url_path='pause')
+    def pause(self, request, pk=None):
+        """
+        POST /api/my-subscriptions/{id}/pause/
+        Pause subscription.
+        """
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        result = queries.update_subscription_status(
+            pk,
+            user_data['client_profile']['id'],
+            'paused'
+        )
+        
+        if result:
+            return Response({
+                'message': 'Subscription paused',
+                'subscription': result
+            })
+        
+        return Response({
+            'error': 'Subscription not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        """
+        POST /api/my-subscriptions/{id}/cancel/
+        Cancel subscription.
+        """
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        result = queries.update_subscription_status(
+            pk,
+            user_data['client_profile']['id'],
+            'cancelled'
+        )
+        
+        if result:
+            return Response({
+                'message': 'Subscription cancelled',
+                'subscription': result
+            })
+        
+        return Response({
+            'error': 'Subscription not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=True, methods=['post'], url_path='reactivate')
+    def reactivate(self, request, pk=None):
+        """
+        POST /api/my-subscriptions/{id}/reactivate/
+        Reactivate paused subscription.
+        """
+        from users import queries as user_queries
+        user_data = user_queries.get_user_by_id(request.user.id)
+        
+        result = queries.update_subscription_status(
+            pk,
+            user_data['client_profile']['id'],
+            'active'
+        )
+        
+        if result:
+            return Response({
+                'message': 'Subscription reactivated',
+                'subscription': result
+            })
+        
+        return Response({
+            'error': 'Subscription not found'
+        }, status=status.HTTP_404_NOT_FOUND)
