@@ -111,7 +111,9 @@ class SeasonalBasketSerializer(serializers.Serializer):
     subscriber_count = serializers.IntegerField(read_only=True, required=False)
     product_count = serializers.IntegerField(read_only=True, required=False)
     producer_shop_name = serializers.CharField(read_only=True, required=False)
-
+    producer_banner = serializers.CharField(read_only=True, required=False) 
+    products = serializers.ListField(read_only=True, required=False)
+    pickup_day = serializers.CharField(max_length=20, required=False)
 
 class BasketProductSerializer(serializers.Serializer):
     product_id = serializers.IntegerField()
@@ -129,8 +131,25 @@ class ClientSubscriptionSerializer(serializers.Serializer):
     delivery_method = serializers.ChoiceField(
         choices=['pickup_producer', 'pickup_point']
     )
-    delivery_address = serializers.CharField(required=False, allow_blank=True)
-    pickup_point_id = serializers.CharField(required=False, allow_blank=True)
+    delivery_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    pickup_point_id = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     start_date = serializers.DateField(read_only=True)
     next_delivery_date = serializers.DateField(read_only=True)
     total_deliveries = serializers.IntegerField(read_only=True)
+    
+    # ✅ ADD ALL BASKET FIELDS FROM QUERY
+    basket_name = serializers.CharField(read_only=True, required=False)
+    basket_description = serializers.CharField(read_only=True, required=False, allow_blank=True, allow_null=True)
+    original_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True, required=False)
+    discounted_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True, required=False)
+    discount_percentage = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True, required=False)
+    delivery_frequency = serializers.CharField(read_only=True, required=False)
+    pickup_day = serializers.CharField(read_only=True, required=False)
+    
+    # ✅ ADD PRODUCER FIELDS
+    producer_id = serializers.IntegerField(read_only=True, required=False)
+    shop_name = serializers.CharField(read_only=True, required=False)
+    city = serializers.CharField(read_only=True, required=False)
+    wilaya = serializers.CharField(read_only=True, required=False)
+    producer_banner = serializers.CharField(read_only=True, required=False, allow_blank=True, allow_null=True)
+    product_count = serializers.IntegerField(read_only=True, required=False)

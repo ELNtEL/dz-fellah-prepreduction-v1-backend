@@ -40,6 +40,7 @@ class SubOrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     total = serializers.SerializerMethodField()
     producer_details = serializers.SerializerMethodField()
+    client_details = serializers.SerializerMethodField()
     
     class Meta:
         model = SubOrder
@@ -48,6 +49,7 @@ class SubOrderSerializer(serializers.ModelSerializer):
             'sub_order_number',
             'producer_id',
             'producer_details',
+            'client_details',
             'status',
             'subtotal',
             'total',
@@ -84,6 +86,43 @@ class SubOrderSerializer(serializers.ModelSerializer):
             'phone': producer.get('phone'),
             'address': producer.get('address'),
         }
+    
+    def get_client_details(self, obj):
+        """Détails du client depuis la commande parent."""
+        try:
+            from db import users_queries
+            
+            # Get user data from parent order's client_id
+            user = users_queries.get_user_by_id(obj.parent_order.client_id)
+            
+            if not user:
+                return {
+                    'first_name': '',
+                    'last_name': '',
+                    'email': '',
+                    'phone': '',
+                    'avatar': None
+                }
+            
+            # Get client profile for avatar
+            client_profile = user.get('client_profile', {})
+            
+            return {
+                'first_name': user.get('first_name', ''),
+                'last_name': user.get('last_name', ''),
+                'email': user.get('email', ''),
+                'phone': user.get('phone', ''),
+                'avatar': client_profile.get('avatar') if client_profile else None
+            }
+        except Exception as e:
+            print(f"Error getting client details: {e}")
+            return {
+                'first_name': '',
+                'last_name': '',
+                'email': '',
+                'phone': '',
+                'avatar': None
+            }
 
 
 class OrderSerializer(serializers.ModelSerializer):

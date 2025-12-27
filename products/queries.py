@@ -551,25 +551,25 @@ def search_products_advanced(search=None, producer_search=None, product_type=Non
 # SEASONAL BASKET QUERIES
 # ============================================
 
-def create_seasonal_basket(producer_id, name, description, photo_url, discount_percentage, 
-                          original_price, delivery_frequency='weekly'):
+def create_seasonal_basket(producer_id, name, description, discount_percentage, 
+                          original_price, delivery_frequency='weekly', pickup_day='Saturday'):
     """Create a new seasonal basket."""
-    discounted_price = original_price * (1 - discount_percentage / 100)
+    discounted_price = float(original_price) * (1 - float(discount_percentage) / 100)
     
     sql = """
         INSERT INTO seasonal_baskets (
-            producer_id, name, description, photo_url, discount_percentage,
-            original_price, discounted_price, delivery_frequency
+            producer_id, name, description, discount_percentage,
+            original_price, discounted_price, delivery_frequency, pickup_day
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        RETURNING id, producer_id, name, description, photo_url, discount_percentage,
-                  original_price, discounted_price, delivery_frequency, is_active,
-                  created_at, updated_at
+        RETURNING id, producer_id, name, description, discount_percentage,
+                  original_price, discounted_price, delivery_frequency, 
+                  pickup_day, is_active, created_at
     """
     
     with connection.cursor() as cursor:
         cursor.execute(sql, [
             producer_id, name, description, discount_percentage,
-            original_price, discounted_price, delivery_frequency
+            original_price, discounted_price, delivery_frequency, pickup_day
         ])
         return dict_fetchone(cursor)
 
@@ -606,12 +606,13 @@ def get_basket_with_products(basket_id):
             sb.discount_percentage, sb.original_price, sb.discounted_price,
             sb.delivery_frequency, sb.is_active, sb.created_at,
             p.shop_name as producer_shop_name,
+            p.photo_url as producer_banner,
             COUNT(DISTINCT cs.id) as subscriber_count
         FROM seasonal_baskets sb
         INNER JOIN producers p ON sb.producer_id = p.id
         LEFT JOIN client_subscriptions cs ON sb.id = cs.basket_id AND cs.status = 'active'
         WHERE sb.id = %s
-        GROUP BY sb.id, p.shop_name
+        GROUP BY sb.id, p.shop_name, p.photo_url
     """
     
     with connection.cursor() as cursor:
@@ -621,7 +622,7 @@ def get_basket_with_products(basket_id):
         if not basket:
             return None
         
-        # Get products in basket
+        # Get products in basket - REMOVED is_active check
         products_sql = """
             SELECT 
                 bp.quantity,
@@ -629,14 +630,12 @@ def get_basket_with_products(basket_id):
                 p.sale_type, p.product_type
             FROM basket_products bp
             INNER JOIN products p ON bp.product_id = p.id
-            WHERE bp.basket_id = %s AND p.is_active = TRUE
+            WHERE bp.basket_id = %s
         """
         cursor.execute(products_sql, [basket_id])
         basket['products'] = dict_fetchall(cursor)
         
         return basket
-
-
 def get_producer_baskets(producer_id, is_active=None):
     """Get all baskets for a producer."""
     sql = """
@@ -644,9 +643,11 @@ def get_producer_baskets(producer_id, is_active=None):
             sb.id, sb.name, sb.description, 
             sb.discount_percentage, sb.original_price, sb.discounted_price,
             sb.delivery_frequency, sb.is_active, sb.created_at,
+            p.photo_url as producer_banner,
             COUNT(DISTINCT cs.id) as subscriber_count,
             COUNT(DISTINCT bp.product_id) as product_count
         FROM seasonal_baskets sb
+        INNER JOIN producers p ON sb.producer_id = p.id
         LEFT JOIN client_subscriptions cs ON sb.id = cs.basket_id AND cs.status = 'active'
         LEFT JOIN basket_products bp ON sb.id = bp.basket_id
         WHERE sb.producer_id = %s
@@ -657,18 +658,17 @@ def get_producer_baskets(producer_id, is_active=None):
         sql += " AND sb.is_active = %s"
         params.append(is_active)
     
-    sql += " GROUP BY sb.id ORDER BY sb.created_at DESC"
+    sql += " GROUP BY sb.id, p.photo_url ORDER BY sb.created_at DESC"
     
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         return dict_fetchall(cursor)
 
-
 def get_all_active_baskets(search=None, producer_id=None, limit=20):
     """Get all active seasonal baskets (for clients to browse)."""
     sql = """
         SELECT 
-            sb.id, sb.name, sb.description, sb.photo_url,
+            sb.id, sb.name, sb.description,
             sb.discount_percentage, sb.original_price, sb.discounted_price,
             sb.delivery_frequency, sb.created_at,
             p.id as producer_id, p.shop_name, p.city, p.wilaya, p.is_bio_certified,
@@ -696,6 +696,7 @@ def get_all_active_baskets(search=None, producer_id=None, limit=20):
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         return dict_fetchall(cursor)
+
 
 
 def update_basket(basket_id, producer_id, **updates):
@@ -770,34 +771,61 @@ def create_subscription(client_id, basket_id, delivery_method, delivery_address=
         return dict_fetchone(cursor)
 
 
-def get_client_subscriptions(client_id, status=None):
-    """Get all subscriptions for a client."""
+def get_client_subscriptions(client_id, status=None):   
+    """Get all subscriptions for a client with basket details."""
     sql = """
         SELECT 
-            cs.id, cs.status, cs.start_date, cs.next_delivery_date,
-            cs.delivery_method, cs.delivery_address, cs.pickup_point_id,
-            cs.total_deliveries, cs.created_at,
-            sb.id as basket_id, sb.name as basket_name, sb.description as basket_description,
-            sb.photo_url as basket_photo, sb.discounted_price,
-            sb.delivery_frequency, sb.discount_percentage,
-            p.id as producer_id, p.shop_name, p.city, p.wilaya
+            cs.id,
+            cs.client_id,
+            cs.basket_id,
+            cs.status,
+            cs.start_date,
+            cs.next_delivery_date,
+            cs.delivery_method,
+            cs.delivery_address,
+            cs.pickup_point_id,
+            cs.total_deliveries,
+            sb.name as basket_name,
+            sb.description as basket_description,
+            sb.original_price,
+            sb.discounted_price,
+            sb.discount_percentage,
+            sb.delivery_frequency,
+            sb.pickup_day,
+            p.id as producer_id,
+            p.shop_name,
+            p.city,
+            p.wilaya,
+            p.photo_url as producer_banner,
+            COUNT(bp.id) as product_count
         FROM client_subscriptions cs
         INNER JOIN seasonal_baskets sb ON cs.basket_id = sb.id
         INNER JOIN producers p ON sb.producer_id = p.id
+        LEFT JOIN basket_products bp ON sb.id = bp.basket_id
         WHERE cs.client_id = %s
     """
+    
     params = [client_id]
     
+    # ✅ Add status filter if provided
     if status:
         sql += " AND cs.status = %s"
         params.append(status)
     
-    sql += " ORDER BY cs.created_at DESC"
+    sql += """
+        GROUP BY 
+            cs.id, cs.client_id, cs.basket_id, cs.status, 
+            cs.start_date, cs.next_delivery_date, cs.delivery_method,
+            cs.delivery_address, cs.pickup_point_id, cs.total_deliveries,
+            sb.name, sb.description, sb.original_price, sb.discounted_price,
+            sb.discount_percentage, sb.delivery_frequency, sb.pickup_day,
+            p.id, p.shop_name, p.city, p.wilaya, p.photo_url
+        ORDER BY cs.created_at DESC
+    """
     
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
         return dict_fetchall(cursor)
-
 
 def get_basket_subscribers(basket_id, producer_id):
     """Get all subscribers for a basket (producer view)."""

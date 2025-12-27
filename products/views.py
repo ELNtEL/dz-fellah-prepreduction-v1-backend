@@ -1099,17 +1099,25 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         """
         # Get client profile
         from users import queries as user_queries
-        user_data = user_queries.get_user_by_id(request.user.id)
+        user_row = user_queries.get_user_by_id(request.user.id)
+        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
         
         if user_data['user_type'] != 'client':
             return Response({
                 'error': 'Only clients can have subscriptions'
             }, status=status.HTTP_403_FORBIDDEN)
         
+        # Check if client_profile exists
+        client_profile = user_data.get('client_profile')
+        if not client_profile or not client_profile.get('id'):
+            return Response({
+                'error': 'Client profile not found. Please complete your profile.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         status_filter = request.query_params.get('status')
         
         subscriptions = queries.get_client_subscriptions(
-            user_data['client_profile']['id'],
+            client_profile['id'],
             status=status_filter
         )
         
@@ -1126,18 +1134,26 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         Create a new subscription.
         """
         from users import queries as user_queries
-        user_data = user_queries.get_user_by_id(request.user.id)
+        user_row = user_queries.get_user_by_id(request.user.id)
+        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
         
         if user_data['user_type'] != 'client':
             return Response({
                 'error': 'Only clients can subscribe'
             }, status=status.HTTP_403_FORBIDDEN)
         
+        # Check if client_profile exists
+        client_profile = user_data.get('client_profile')
+        if not client_profile or not client_profile.get('id'):
+            return Response({
+                'error': 'Client profile not found. Please complete your profile.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = ClientSubscriptionSerializer(data=request.data)
         
         if serializer.is_valid():
             subscription = queries.create_subscription(
-                client_id=user_data['client_profile']['id'],
+                client_id=client_profile['id'],
                 basket_id=serializer.validated_data['basket_id'],
                 delivery_method=serializer.validated_data['delivery_method'],
                 delivery_address=serializer.validated_data.get('delivery_address'),
@@ -1160,11 +1176,19 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         Pause subscription.
         """
         from users import queries as user_queries
-        user_data = user_queries.get_user_by_id(request.user.id)
+        user_row = user_queries.get_user_by_id(request.user.id)
+        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
+        
+        # Check if client_profile exists
+        client_profile = user_data.get('client_profile')
+        if not client_profile or not client_profile.get('id'):
+            return Response({
+                'error': 'Client profile not found'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         result = queries.update_subscription_status(
             pk,
-            user_data['client_profile']['id'],
+            client_profile['id'],
             'paused'
         )
         
@@ -1185,11 +1209,19 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         Cancel subscription.
         """
         from users import queries as user_queries
-        user_data = user_queries.get_user_by_id(request.user.id)
+        user_row = user_queries.get_user_by_id(request.user.id)
+        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
+        
+        # Check if client_profile exists
+        client_profile = user_data.get('client_profile')
+        if not client_profile or not client_profile.get('id'):
+            return Response({
+                'error': 'Client profile not found'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         result = queries.update_subscription_status(
             pk,
-            user_data['client_profile']['id'],
+            client_profile['id'],
             'cancelled'
         )
         
@@ -1210,11 +1242,19 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         Reactivate paused subscription.
         """
         from users import queries as user_queries
-        user_data = user_queries.get_user_by_id(request.user.id)
+        user_row = user_queries.get_user_by_id(request.user.id)
+        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
+        
+        # Check if client_profile exists
+        client_profile = user_data.get('client_profile')
+        if not client_profile or not client_profile.get('id'):
+            return Response({
+                'error': 'Client profile not found'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         result = queries.update_subscription_status(
             pk,
-            user_data['client_profile']['id'],
+            client_profile['id'],
             'active'
         )
         

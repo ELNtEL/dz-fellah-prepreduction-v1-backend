@@ -199,6 +199,7 @@ def delete_product_rating_view(request, product_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 @api_view(['GET'])
 def get_producer_rating_view(request, producer_id):
     """
@@ -209,24 +210,28 @@ def get_producer_rating_view(request, producer_id):
     try:
         summary = get_producer_rating_summary(producer_id)
         
+        # If no summary found (producer has no ratings yet), return default values
         if not summary:
             return Response({
-                'error': 'Producer not found'
-            }, status=status.HTTP_404_NOT_FOUND)
+                'producer_id': int(producer_id),
+                'producer_name': 'Unknown Producer',
+                'total_products': 0,
+                'total_ratings': 0,
+                'average_rating': 0.0
+            })
         
         return Response({
             'producer_id': summary['producer_id'],
             'producer_name': summary['producer_name'],
             'total_products': summary['total_products'],
             'total_ratings': summary['total_ratings'],
-            'average_rating': float(summary['average_rating'])
+            'average_rating': float(summary['average_rating']) if summary['average_rating'] else 0.0
         })
         
     except Exception as e:
         return Response({
             'error': f'Failed to get producer rating: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 @api_view(['GET'])
 @authentication_classes([CustomJWTAuthentication])  # ✅ ADDED
