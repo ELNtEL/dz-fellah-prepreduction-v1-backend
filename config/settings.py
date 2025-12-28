@@ -299,6 +299,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173',
     'https://dz-fellah-prepreduction-v1-frontend-rho.vercel.app'
+    'https://dz-fellah-prepreduction-v1-frontend-2cwx-9j27i7pu6.vercel.app'
 ]
 
 # Add production frontend URL if specified
