@@ -9,6 +9,10 @@ from datetime import timedelta
 import os
 import dj_database_url
 
+print("=" * 50)
+print("DATABASE_URL:", os.environ.get('DATABASE_URL', 'NOT SET!'))
+print("=" * 50)
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
