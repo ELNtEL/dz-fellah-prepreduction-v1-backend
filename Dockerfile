@@ -26,4 +26,8 @@ RUN python manage.py collectstatic --noinput || true
 EXPOSE 8000
 
 # Production command with gunicorn
-CMD ["sh", "-c", "python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --log-level debug"]
+CMD sh -c "python manage.py migrate && \
+    echo '=== Testing WSGI ===' && \
+    python -c 'from config.wsgi import application; print(\"WSGI OK\")' && \
+    echo '=== Starting Gunicorn ===' && \
+    gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --log-level debug --access-logfile - --error-logfile -"
