@@ -38,7 +38,8 @@ CREATE TABLE producers (
     user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     shop_name VARCHAR(255) NOT NULL,
     description TEXT,
-    photo_url VARCHAR(500),
+    photo_url TEXT,
+    avatar TEXT,
     address TEXT,
     city VARCHAR(100),
     wilaya VARCHAR(100),
@@ -61,6 +62,7 @@ CREATE INDEX idx_producers_shop_name ON producers(shop_name);
 CREATE TABLE clients (
     id SERIAL PRIMARY KEY,
     user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    avatar TEXT,
     address TEXT,
     city VARCHAR(100),
     wilaya VARCHAR(100),

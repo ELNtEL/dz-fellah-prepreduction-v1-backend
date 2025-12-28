@@ -153,3 +153,4 @@ class ClientSubscriptionSerializer(serializers.Serializer):
     wilaya = serializers.CharField(read_only=True, required=False)
     producer_banner = serializers.CharField(read_only=True, required=False, allow_blank=True, allow_null=True)
     product_count = serializers.IntegerField(read_only=True, required=False)
+    products = serializers.ListField(read_only=True, required=False)

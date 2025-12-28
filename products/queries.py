@@ -822,10 +822,30 @@ def get_client_subscriptions(client_id, status=None):
             p.id, p.shop_name, p.city, p.wilaya, p.photo_url
         ORDER BY cs.created_at DESC
     """
-    
+
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
-        return dict_fetchall(cursor)
+        subscriptions = dict_fetchall(cursor)
+
+        # Fetch products for each basket
+        for subscription in subscriptions:
+            basket_id = subscription['basket_id']
+            cursor.execute("""
+                SELECT
+                    prod.id,
+                    prod.name,
+                    prod.product_type,
+                    prod.photo_url,
+                    prod.price,
+                    bp.quantity
+                FROM basket_products bp
+                INNER JOIN products prod ON bp.product_id = prod.id
+                WHERE bp.basket_id = %s
+                ORDER BY prod.name
+            """, [basket_id])
+            subscription['products'] = dict_fetchall(cursor)
+
+        return subscriptions
 
 def get_basket_subscribers(basket_id, producer_id):
     """Get all subscribers for a basket (producer view)."""
