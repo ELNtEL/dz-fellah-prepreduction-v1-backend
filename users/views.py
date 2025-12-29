@@ -291,10 +291,12 @@ class UserViewSet(viewsets.ViewSet):
                     
                     # Handle avatar image
                     if 'avatar' in request.data and request.data['avatar']:
-                        from .image_utils import save_base64_image
-                        avatar_path = save_base64_image(request.data['avatar'], folder='avatars')
-                        if avatar_path:
-                            profile_updates['avatar'] = avatar_path
+                        
+                        profile_updates['avatar'] = request.data['avatar']
+                        
+                        
+                        
+                            
                     
                     # Other client fields
                     if 'address' in request.data:
@@ -312,17 +314,15 @@ class UserViewSet(viewsets.ViewSet):
                     
                     # Handle avatar image
                     if 'avatar' in request.data and request.data['avatar']:
-                        from .image_utils import save_base64_image
-                        avatar_path = save_base64_image(request.data['avatar'], folder='avatars')
-                        if avatar_path:
-                            profile_updates['avatar'] = avatar_path
+                        
+                        profile_updates['avatar'] = request.data['avatar']
+                        
                     
                     # Handle farm photo
                     if 'photo_url' in request.data and request.data['photo_url']:
-                        from .image_utils import save_base64_image
-                        photo_path = save_base64_image(request.data['photo_url'], folder='farms')
-                        if photo_path:
-                            profile_updates['photo_url'] = photo_path
+
+                        profile_updates['photo_url'] = request.data['photo_url']
+                       
                     
                     # Other producer fields
                     if 'shop_name' in request.data:
