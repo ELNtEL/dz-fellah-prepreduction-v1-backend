@@ -1,5 +1,5 @@
 from rest_framework import status, viewsets
-from rest_framework.decorators import action, permission_classes, authentication_classes
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
@@ -12,11 +12,9 @@ from .serializers import (
     ClientSubscriptionSerializer,
     ProducerInfoSerializer,
     BasketProductSerializer,
-    
 )
 from users.authentication import CustomJWTAuthentication
 from users.permissions import IsProducer
-from users.image_utils import save_base64_image, delete_image  # ← ADD THIS IMPORT
 
 
 class ProductViewSet(viewsets.ViewSet):
@@ -277,21 +275,14 @@ class MyProductViewSet(viewsets.ViewSet):
         serializer = ProductCreateUpdateSerializer(data=request.data)
         
         if serializer.is_valid():
-            # Handle image upload
-            photo_url = None
-            if 'photo_url' in serializer.validated_data and serializer.validated_data['photo_url']:
-                # Save base64 image to media/products/
-                photo_url = save_base64_image(
-                    serializer.validated_data['photo_url'], 
-                    folder='products'
-                )
-                print(f"✅ Product image saved: {photo_url}")  # Debug log
+            # Get photo_url directly - save base64 as-is
+            photo_url = serializer.validated_data.get('photo_url')
             
             product = queries.create_product(
                 producer_id=request.user.producer_profile.id,
                 name=serializer.validated_data['name'],
                 description=serializer.validated_data.get('description'),
-                photo_url=photo_url,  # ← Use saved path
+                photo_url=photo_url,  # Save base64 directly
                 sale_type=serializer.validated_data['sale_type'],
                 price=serializer.validated_data['price'],
                 stock=serializer.validated_data['stock'],
@@ -347,25 +338,15 @@ class MyProductViewSet(viewsets.ViewSet):
         serializer = ProductCreateUpdateSerializer(data=request.data)
         
         if serializer.is_valid():
-            # Handle image upload
+            # Get photo_url directly - save base64 as-is
             photo_url = serializer.validated_data.get('photo_url')
-            
-            # If new base64 image provided, save it and delete old one
-            if photo_url and (photo_url.startswith('data:image/') or ',' in photo_url):
-                # Delete old image
-                if product.get('photo_url'):
-                    delete_image(product['photo_url'])
-                
-                # Save new image
-                photo_url = save_base64_image(photo_url, folder='products')
-                print(f"✅ Product image updated: {photo_url}")
             
             updated = queries.update_product(
                 product_id=pk,
                 producer_id=request.user.producer_profile.id,
                 name=serializer.validated_data['name'],
                 description=serializer.validated_data.get('description'),
-                photo_url=photo_url,
+                photo_url=photo_url,  # Save base64 directly
                 sale_type=serializer.validated_data['sale_type'],
                 price=serializer.validated_data['price'],
                 stock=serializer.validated_data['stock'],
@@ -398,22 +379,8 @@ class MyProductViewSet(viewsets.ViewSet):
         serializer = ProductCreateUpdateSerializer(data=request.data, partial=True)
         
         if serializer.is_valid():
-            # Handle image upload if provided
-            if 'photo_url' in serializer.validated_data:
-                photo_url = serializer.validated_data['photo_url']
-                
-                # If new base64 image, save it
-                if photo_url and (photo_url.startswith('data:image/') or ',' in photo_url):
-                    # Delete old image
-                    if product.get('photo_url'):
-                        delete_image(product['photo_url'])
-                    
-                    # Save new image
-                    serializer.validated_data['photo_url'] = save_base64_image(
-                        photo_url, 
-                        folder='products'
-                    )
-                    print(f"✅ Product image updated: {serializer.validated_data['photo_url']}")
+            # Photo URL is already in serializer.validated_data as base64 if provided
+            # No conversion needed
             
             updated = queries.partial_update_product(
                 product_id=pk,
@@ -435,14 +402,7 @@ class MyProductViewSet(viewsets.ViewSet):
         DELETE /api/my-products/{id}/
         Delete a product.
         """
-        # Get product to delete its image
-        product = queries.get_my_product_detail(pk, request.user.producer_profile.id)
-        
-        if product and product.get('photo_url'):
-            # Delete image file
-            delete_image(product['photo_url'])
-            print(f"🗑️ Deleted product image: {product['photo_url']}")
-        
+        # No need to delete image files - base64 is in database
         product_name = queries.delete_product(
             pk,
             request.user.producer_profile.id
@@ -481,6 +441,9 @@ class MyProductViewSet(viewsets.ViewSet):
                 'is_anti_gaspi': result['is_anti_gaspi']
             }
         })
+
+
+# Keep all your basket/subscription viewsets below unchanged...
 class SeasonalBasketViewSet(viewsets.ViewSet):
     """
     ViewSet for seasonal basket operations.
@@ -525,7 +488,6 @@ class SeasonalBasketViewSet(viewsets.ViewSet):
         
         serializer = SeasonalBasketSerializer(basket)
         return Response(serializer.data)
-
 
 class MySeasonalBasketViewSet(viewsets.ViewSet):
     """
