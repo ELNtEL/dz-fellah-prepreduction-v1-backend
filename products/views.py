@@ -15,6 +15,7 @@ from .serializers import (
 )
 from users.authentication import CustomJWTAuthentication
 from users.permissions import IsProducer
+from .seasonal_utils import is_product_in_season
 
 
 class ProductViewSet(viewsets.ViewSet):
@@ -59,7 +60,13 @@ class ProductViewSet(viewsets.ViewSet):
                 limit=limit
             )
         
+        for product in products:
+            product['is_seasonal'] = is_product_in_season(product['name'])
+        
         serializer = ProductListSerializer(products, many=True)
+        
+
+            
         
         return Response({
             'count': len(serializer.data),
@@ -84,6 +91,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response({
                 'error': 'Product not found'
             }, status=status.HTTP_404_NOT_FOUND)
+        product['is_seasonal'] = is_product_in_season(product['name'])
         
         # Structure producer data
         producer_data = {
@@ -230,6 +238,36 @@ class ProductViewSet(viewsets.ViewSet):
             },
             'products': serializer.data
         })
+    @action(detail=False, methods=['get'], url_path='seasonal')
+    def seasonal_prodyccts(self, request):
+
+
+
+        from datetime import datetime
+
+        limit = int(request.query_params.get('limit', 20))
+
+        all_products = queries.get_home_products(limit=100)
+
+
+        seasonal = []
+        for product  in all_products:
+            if is_product_in_season(product['name']):
+                product['is_seasonal'] = True
+                seasonal.append(product)
+        
+
+        seasonal = seasonal[:limit]
+
+        serializer = ProductListSerializer(seasonal,many=True)
+        return Response({
+            'count':len(serializer.data),
+            'season' : datetime.now().strftime('%B'),
+            'products' : serializer.data
+        })
+
+
+   
 
 
 class MyProductViewSet(viewsets.ViewSet):

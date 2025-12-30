@@ -19,6 +19,7 @@ class ProductListSerializer(serializers.Serializer):
     harvest_date = serializers.DateField(allow_null=True, required=False)
     producer_id = serializers.IntegerField(read_only=True)
     producer_name = serializers.CharField(read_only=True)
+    is_seasonal = serializers.BooleanField(required=False)
 
 
 class ProducerInfoSerializer(serializers.Serializer):
@@ -54,8 +55,9 @@ class ProductDetailSerializer(serializers.Serializer):
     is_anti_gaspi = serializers.BooleanField()
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
+    is_seasonal = serializers.BooleanField(required=False)
     
-    # Producer info (populated manually in view)
+    
     producer = ProducerInfoSerializer(read_only=True)
 
 
