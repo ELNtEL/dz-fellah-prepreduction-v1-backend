@@ -10,103 +10,7 @@ import os
 
 
 class Command(BaseCommand):
-    help = 'Import seasonal data from CSV with fuzzy matching for Arabic/French/English'
-
-    def normalize_for_matching(self, text):
-        """Normalize text for fuzzy matching"""
-        if not text:
-            return ''
-        
-        text = text.lower().strip()
-        replacements = {
-            'é': 'e', 'è': 'e', 'ê': 'e',
-            'à': 'a', 'â': 'a',
-            'ô': 'o', 'ö': 'o',
-            'û': 'u', 'ù': 'u', 'ü': 'u',
-            'ï': 'i', 'î': 'i',
-            'ç': 'c'
-        }
-        
-        for old, new in replacements.items():
-            text = text.replace(old, new)
-        
-        return text
-
-    def find_canonical_name(self, input_name):
-        """Find canonical product name from variations"""
-        
-        name_variations = {
-            # Tomatoes
-            'tomato': 'Tomato', 'tomate': 'Tomato', 'tomatos': 'Tomato',
-            'tomates': 'Tomato', 'tomatoe': 'Tomato', 'طماطم': 'Tomato',
-            'طماطة': 'Tomato', 'بندورة': 'Tomato',
-            
-            # Potatoes
-            'potato': 'Potato', 'potatoes': 'Potato', 'pomme de terre': 'Potato',
-            'patato': 'Potato', 'potatoe': 'Potato', 'بطاطا': 'Potato',
-            'بطاطس': 'Potato',
-            
-            # Zucchini
-            'zucchini': 'Zucchini', 'courgette': 'Zucchini', 'zuchini': 'Zucchini',
-            'zuccini': 'Zucchini', 'كوسة': 'Zucchini', 'كوسا': 'Zucchini',
-            
-            # Eggplant
-            'eggplant': 'Eggplant', 'aubergine': 'Eggplant', 'egplant': 'Eggplant',
-            'باذنجان': 'Eggplant', 'بادنجان': 'Eggplant',
-            
-            # Pepper
-            'pepper': 'Pepper', 'poivron': 'Pepper', 'peper': 'Pepper',
-            'pepr': 'Pepper', 'فلفل': 'Pepper', 'فليفلة': 'Pepper',
-            
-            # Cucumber
-            'cucumber': 'Cucumber', 'concombre': 'Cucumber', 'cucmber': 'Cucumber',
-            'خيار': 'Cucumber',
-            
-            # Carrot
-            'carrot': 'Carrot', 'carrots': 'Carrot', 'carot': 'Carrot',
-            'carotte': 'Carrot', 'جزر': 'Carrot',
-            
-            # Onion
-            'onion': 'Onion', 'oignon': 'Onion', 'onon': 'Onion',
-            'بصل': 'Onion', 'بصلة': 'Onion',
-            
-            # Garlic
-            'garlic': 'Garlic', 'ail': 'Garlic', 'garlik': 'Garlic', 'ثوم': 'Garlic',
-            
-            # Fruits
-            'orange': 'Orange', 'برتقال': 'Orange', 'برتقالة': 'Orange',
-            'lemon': 'Lemon', 'citron': 'Lemon', 'ليمون': 'Lemon', 'حامض': 'Lemon',
-            'strawberry': 'Strawberry', 'fraise': 'Strawberry', 'فراولة': 'Strawberry',
-            'banana': 'Banana', 'banane': 'Banana', 'موز': 'Banana',
-            'apple': 'Apple', 'pomme': 'Apple', 'تفاح': 'Apple',
-            
-            # Add more as needed...
-        }
-        
-        # Try exact match
-        if input_name.strip() in name_variations:
-            return name_variations[input_name.strip()]
-        
-        # Try normalized match
-        normalized = self.normalize_for_matching(input_name)
-        if normalized in name_variations:
-            return name_variations[normalized]
-        
-        # Try partial match
-        for variation, canonical in name_variations.items():
-            if variation in normalized or normalized in variation:
-                return canonical
-        
-        return input_name.strip().lower().capitalize()
-
-    def clean_text(self, text):
-        """Clean and standardize product name"""
-        if not text:
-            return ''
-        
-        cleaned = ' '.join(text.split())
-        canonical = self.find_canonical_name(cleaned)
-        return canonical
+    help = 'Import seasonal data from CSV - keeps original names for academic purposes'
 
     def handle(self, *args, **options):
         csv_path = os.path.join(os.path.dirname(__file__), '../../../scripts/seasonal_data.csv')
@@ -137,7 +41,8 @@ class Command(BaseCommand):
                         skipped += 1
                         continue
                     
-                    product_clean = self.clean_text(product_name)
+                    # Keep original name, just clean whitespace
+                    product_clean = ' '.join(product_name.split())
                     
                     try:
                         start = int(start_month)
@@ -150,9 +55,6 @@ class Command(BaseCommand):
                     if not (1 <= start <= 12 and 1 <= end <= 12):
                         skipped += 1
                         continue
-                    
-                    if product_name != product_clean:
-                        self.stdout.write(f'🔧 Row {row_num}: "{product_name}" → "{product_clean}"')
                     
                     cursor.execute("""
                         INSERT INTO product_seasons (product_name, start_month, end_month)
