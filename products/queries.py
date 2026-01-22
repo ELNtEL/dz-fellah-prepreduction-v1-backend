@@ -438,7 +438,9 @@ def mark_products_as_anti_gaspi():
     """
     sql = """
         UPDATE products
-        SET is_anti_gaspi = TRUE
+        SET
+            is_anti_gaspi = TRUE
+            price = ROUND(price * 0.5, 2)
         WHERE product_type IN ('Vegetables', 'Fruits', 'Dairy', 'Meat')
             AND harvest_date IS NOT NULL
             AND stock > 3
