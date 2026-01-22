@@ -13,4 +13,5 @@ jobs:
         run: |
           curl -X POST \
             -H "X-Cron-Secret: ${{ secrets.CRON_SECRET_TOKEN }}" \
-            https://web-production-2cdc7.up.railway.app/api/cron/anti_gaspi/
+            https://web-production-2cdc7.up.railway.app/api/cron/anti-gaspi/
+
