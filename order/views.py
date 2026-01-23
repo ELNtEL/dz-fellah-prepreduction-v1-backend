@@ -73,6 +73,9 @@ class OrderViewSet(viewsets.ViewSet):
                     
                     if not product:
                         raise ValueError(f"Produit {cart_item.product_id} introuvable")
+                    if product['producer_id'] == request.user.id:
+                        raise ValueError('Vous ne pouvez pas commander vos propres produits')
+    
                     
                     # Vérifier le stock
                     if cart_item.quantity > product['stock']:

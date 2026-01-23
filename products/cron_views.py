@@ -36,4 +36,4 @@ def trigger_anti_gaspi_cron(request):
         return JsonResponse({
             'success': False,
             'error': str(e) 
-        }, status=500) 
+        }, status=500)

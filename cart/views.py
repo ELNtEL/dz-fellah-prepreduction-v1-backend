@@ -70,7 +70,8 @@ class CartViewSet(viewsets.ViewSet):
             return Response({
                 'error': 'Produit introuvable'
             }, status=status.HTTP_404_NOT_FOUND)
-        
+        if product['producer_id'] == request.user.id:
+             return Response({'error': 'Vous ne pouvez pas acheter vos propres produits'}, status=400)
         # Vérifier le stock
         if quantity > product['stock']:
             return Response({

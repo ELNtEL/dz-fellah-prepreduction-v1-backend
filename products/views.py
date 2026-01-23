@@ -1100,7 +1100,7 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         # Get client profile
         from users import queries as user_queries
         user_row = user_queries.get_user_by_id(request.user.id)
-        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
+        user_data = user_queries.structure_user_data(user_row)  
         
         if user_data['user_type'] != 'client':
             return Response({
@@ -1135,8 +1135,8 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         """
         from users import queries as user_queries
         user_row = user_queries.get_user_by_id(request.user.id)
-        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
-        
+        user_data = user_queries.structure_user_data(user_row)  
+    
         if user_data['user_type'] != 'client':
             return Response({
                 'error': 'Only clients can subscribe'
@@ -1177,7 +1177,7 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         """
         from users import queries as user_queries
         user_row = user_queries.get_user_by_id(request.user.id)
-        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
+        user_data = user_queries.structure_user_data(user_row)  
         
         # Check if client_profile exists
         client_profile = user_data.get('client_profile')
@@ -1210,7 +1210,7 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         """
         from users import queries as user_queries
         user_row = user_queries.get_user_by_id(request.user.id)
-        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
+        user_data = user_queries.structure_user_data(user_row)  
         
         # Check if client_profile exists
         client_profile = user_data.get('client_profile')
@@ -1243,7 +1243,7 @@ class MySubscriptionViewSet(viewsets.ViewSet):
         """
         from users import queries as user_queries
         user_row = user_queries.get_user_by_id(request.user.id)
-        user_data = user_queries.structure_user_data(user_row)  # ✅ ADDED
+        user_data = user_queries.structure_user_data(user_row)  
         
         # Check if client_profile exists
         client_profile = user_data.get('client_profile')

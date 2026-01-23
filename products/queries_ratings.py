@@ -14,9 +14,7 @@ def dictfetchone(cursor):
     return dict(zip(columns, row)) if row else None
 
 
-# ================================
-# CHECK QUERIES
-# ================================
+
 
 def check_user_purchased_product(user_id, product_id):
     """
@@ -91,9 +89,7 @@ def get_product_basic_info(product_id):
         return dictfetchone(cursor)
 
 
-# ================================
-# RATING CRUD QUERIES
-# ================================
+
 
 def insert_or_update_rating(product_id, user_id, rating, created_at, updated_at):
     """
@@ -148,9 +144,7 @@ def delete_user_rating(user_id, product_id):
         return deleted is not None
 
 
-# ================================
-# RATING SUMMARY QUERIES
-# ================================
+
 
 def get_product_rating_summary(product_id):
     """

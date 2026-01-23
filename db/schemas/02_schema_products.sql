@@ -120,6 +120,7 @@ CREATE INDEX idx_subscription_deliveries_subscription_id ON subscription_deliver
 CREATE INDEX idx_subscription_deliveries_status ON subscription_deliveries(status);
 CREATE INDEX idx_subscription_deliveries_delivery_date ON subscription_deliveries(delivery_date);
 
+
 -- rating tables
 
 -- Product Ratings Table (using user_id instead of client_id)

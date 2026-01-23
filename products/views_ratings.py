@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime
 
-from users.authentication import CustomJWTAuthentication  # ✅ ADDED
+from users.authentication import CustomJWTAuthentication
 from .queries_ratings import (
     check_user_purchased_product,
     check_user_owns_product,
@@ -17,12 +17,10 @@ from .queries_ratings import (
 )
 
 
-# ================================
-# RATING ENDPOINTS
-# ================================
+
 
 @api_view(['POST'])
-@authentication_classes([CustomJWTAuthentication])  # ✅ ADDED
+@authentication_classes([CustomJWTAuthentication]) 
 @permission_classes([IsAuthenticated])
 def create_product_rating(request):
     """
@@ -132,7 +130,7 @@ def get_product_ratings(request, product_id):
 
 
 @api_view(['GET'])
-@authentication_classes([CustomJWTAuthentication])  # ✅ ADDED
+@authentication_classes([CustomJWTAuthentication])  
 @permission_classes([IsAuthenticated])
 def get_my_product_rating(request, product_id):
     """
@@ -171,7 +169,7 @@ def get_my_product_rating(request, product_id):
 
 
 @api_view(['DELETE'])
-@authentication_classes([CustomJWTAuthentication])  # ✅ ADDED
+@authentication_classes([CustomJWTAuthentication])  
 @permission_classes([IsAuthenticated])
 def delete_product_rating_view(request, product_id):
     """
@@ -234,7 +232,7 @@ def get_producer_rating_view(request, producer_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
-@authentication_classes([CustomJWTAuthentication])  # ✅ ADDED
+@authentication_classes([CustomJWTAuthentication])  
 @permission_classes([IsAuthenticated])
 def debug_purchase_check(request, product_id):
     """
