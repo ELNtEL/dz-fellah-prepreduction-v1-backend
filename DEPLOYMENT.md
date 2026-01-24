@@ -13,9 +13,8 @@ This guide will help you deploy your DZ-Fellah Django API to Railway using Docke
 
 ### 1. Prepare Your Repository
 
-First, make sure all deployment files are committed to your repository:
 
-```bash
+
 git add .
 git commit -m "Add Railway deployment configuration"
 git push origin main
