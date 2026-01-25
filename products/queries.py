@@ -773,10 +773,10 @@ def create_subscription(client_id, basket_id, delivery_method, delivery_address=
         return dict_fetchone(cursor)
 
 
-def get_client_subscriptions(client_id, status=None):   
-    """Get all subscriptions for a client with basket details."""
+def get_client_subscriptions(client_id, status=None):
+    """Get all subscriptions for a client with basket details and products."""
     sql = """
-        SELECT 
+        SELECT
             cs.id,
             cs.client_id,
             cs.basket_id,
@@ -806,17 +806,17 @@ def get_client_subscriptions(client_id, status=None):
         LEFT JOIN basket_products bp ON sb.id = bp.basket_id
         WHERE cs.client_id = %s
     """
-    
+
     params = [client_id]
-    
-    # ✅ Add status filter if provided
+
+    # Add status filter if provided
     if status:
         sql += " AND cs.status = %s"
         params.append(status)
-    
+
     sql += """
-        GROUP BY 
-            cs.id, cs.client_id, cs.basket_id, cs.status, 
+        GROUP BY
+            cs.id, cs.client_id, cs.basket_id, cs.status,
             cs.start_date, cs.next_delivery_date, cs.delivery_method,
             cs.delivery_address, cs.pickup_point_id, cs.total_deliveries,
             sb.name, sb.description, sb.original_price, sb.discounted_price,
@@ -824,10 +824,26 @@ def get_client_subscriptions(client_id, status=None):
             p.id, p.shop_name, p.city, p.wilaya, p.photo_url
         ORDER BY cs.created_at DESC
     """
-    
+
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
-        return dict_fetchall(cursor)
+        subscriptions = dict_fetchall(cursor)
+
+        # Fetch products for each subscription's basket
+        for subscription in subscriptions:
+            products_sql = """
+                SELECT
+                    bp.quantity,
+                    prod.id, prod.name, prod.description, prod.photo_url, prod.price,
+                    prod.sale_type, prod.product_type
+                FROM basket_products bp
+                INNER JOIN products prod ON bp.product_id = prod.id
+                WHERE bp.basket_id = %s
+            """
+            cursor.execute(products_sql, [subscription['basket_id']])
+            subscription['products'] = dict_fetchall(cursor)
+
+        return subscriptions
 
 def get_basket_subscribers(basket_id, producer_id):
     """Get all subscribers for a basket (producer view)."""

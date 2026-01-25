@@ -158,17 +158,18 @@ LEFT JOIN product_ratings pr ON p.id = pr.product_id
 GROUP BY p.id, p.name, p.producer_id;
 
 -- Producer rating summary view
-CREATE OR REPLACE VIEW producer_rating_summary AS
-SELECT 
-    u.id AS producer_id,
-    u.first_name || ' ' || u.last_name AS producer_name,
+-- Fixed: Join through producers table since products.producer_id references producers.id, not users.id
+DROP VIEW IF EXISTS producer_rating_summary;
+CREATE VIEW producer_rating_summary AS
+SELECT
+    prod.id AS producer_id,
+    prod.shop_name::TEXT AS producer_name,
     COUNT(DISTINCT p.id) AS total_products,
     COUNT(pr.id) AS total_ratings,
     COALESCE(ROUND(AVG(pr.rating), 1), 0) AS average_rating
-FROM users u
-INNER JOIN products p ON u.id = p.producer_id
+FROM producers prod
+INNER JOIN products p ON prod.id = p.producer_id
 LEFT JOIN product_ratings pr ON p.id = pr.product_id
-WHERE u.user_type = 'producer'
-GROUP BY u.id, u.first_name, u.last_name;
+GROUP BY prod.id, prod.shop_name;
 
 --

@@ -444,4 +444,4 @@ def update_producer_profile(user_id, **kwargs):
     """
     
     with connection.cursor() as cursor:
-        cursor.execute(sql, params).
+        cursor.execute(sql, params)
