@@ -440,20 +440,36 @@ class MyProductViewSet(viewsets.ViewSet):
         DELETE /api/my-products/{id}/
         Delete a product.
         """
-        # No need to delete image files - base64 is in database
-        product_name = queries.delete_product(
-            pk,
-            request.user.producer_profile.id
-        )
-        
-        if product_name:
+        try:
+            # Get producer profile
+            producer_profile = getattr(request.user, 'producer_profile', None)
+            if not producer_profile:
+                return Response({
+                    'error': 'Producer profile not found'
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            # Delete the product
+            product_name = queries.delete_product(
+                pk,
+                producer_profile.id
+            )
+
+            if product_name:
+                return Response({
+                    'message': f'Product "{product_name}" deleted successfully'
+                }, status=status.HTTP_204_NO_CONTENT)
+
             return Response({
-                'message': f'Product "{product_name}" deleted successfully'
-            }, status=status.HTTP_204_NO_CONTENT)
-        
-        return Response({
-            'error': 'Product not found'
-        }, status=status.HTTP_404_NOT_FOUND)
+                'error': 'Product not found or you do not have permission to delete it'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            import traceback
+            print(f"Error deleting product {pk}: {str(e)}")
+            print(traceback.format_exc())
+            return Response({
+                'error': f'Failed to delete product: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=True, methods=['post'], url_path='toggle-anti-gaspi')
     def toggle_anti_gaspi(self, request, pk=None):
