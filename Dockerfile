@@ -1,5 +1,4 @@
-
-# Force rebuild - v2
+# Force rebuild - v3
 FROM python:3.12
 WORKDIR /usr/local/dzfellah
 
@@ -27,6 +26,15 @@ RUN python manage.py collectstatic --noinput || true
 # Expose port (Railway will set PORT env variable)
 EXPOSE 8000
 
-# Production command with gunicorn
-# Change the CMD to this:
-CMD ["sh", "-c", "gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --access-logfile - --error-logfile -"]
+# Create startup script
+RUN echo '#!/bin/sh\n\
+echo "Running migrations..."\n\
+python manage.py migrate --noinput\n\
+echo "Creating superuser if needed..."\n\
+python manage.py createadmin\n\
+echo "Starting gunicorn..."\n\
+exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120 --access-logfile - --error-logfile -\n\
+' > /start.sh && chmod +x /start.sh
+
+# Use startup script
+CMD ["/start.sh"]
