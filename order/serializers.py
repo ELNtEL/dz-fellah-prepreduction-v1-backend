@@ -36,12 +36,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class SubOrderSerializer(serializers.ModelSerializer):
     """Serializer pour les sous-commandes."""
-    
+
     items = OrderItemSerializer(many=True, read_only=True)
     total = serializers.SerializerMethodField()
     producer_details = serializers.SerializerMethodField()
     client_details = serializers.SerializerMethodField()
-    
+    parent_order_details = serializers.SerializerMethodField()
+
     class Meta:
         model = SubOrder
         fields = [
@@ -50,6 +51,7 @@ class SubOrderSerializer(serializers.ModelSerializer):
             'producer_id',
             'producer_details',
             'client_details',
+            'parent_order_details',
             'status',
             'subtotal',
             'total',
@@ -65,10 +67,19 @@ class SubOrderSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at'
         ]
-    
+
     def get_total(self, obj):
         """Total de cette sous-commande."""
         return float(obj.get_total())
+
+    def get_parent_order_details(self, obj):
+        """Details from parent order including delivery info."""
+        return {
+            'order_number': obj.parent_order.order_number,
+            'delivery_method': obj.parent_order.delivery_method,
+            'delivery_address': obj.parent_order.delivery_address,
+            'notes': obj.parent_order.notes,
+        }
     
     def get_producer_details(self, obj):
         """Détails du producteur."""
