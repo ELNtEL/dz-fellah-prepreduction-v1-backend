@@ -1,237 +1,30 @@
--- =============================================
--- DZ-FELLAH DATABASE SCHEMA
--- PostgreSQL 14+
--- =============================================
+-- ============================================
+-- DZ-FELLAH MARKETPLACE - COMPLETE DATABASE SCHEMA
+-- PostgreSQL Database Creation Script
+-- ============================================
 
--- Drop existing tables (cascade pour les foreign keys)
-DROP TABLE IF EXISTS order_items CASCADE;
-DROP TABLE IF EXISTS orders CASCADE;
-DROP TABLE IF EXISTS cart_items CASCADE;
-DROP TABLE IF EXISTS subscription_products CASCADE;
-DROP TABLE IF EXISTS subscriptions CASCADE;
-DROP TABLE IF EXISTS seasonal_basket_products CASCADE;
+-- ============================================
+-- DROP ALL TABLES IN CORRECT ORDER (reverse of dependencies)
+-- ============================================
+
+DROP TABLE IF EXISTS subscription_deliveries CASCADE;
+DROP TABLE IF EXISTS client_subscriptions CASCADE;
+DROP TABLE IF EXISTS basket_products CASCADE;
 DROP TABLE IF EXISTS seasonal_baskets CASCADE;
+DROP TABLE IF EXISTS product_ratings CASCADE;
+DROP VIEW IF EXISTS producer_rating_summary CASCADE;
+DROP VIEW IF EXISTS product_rating_summary CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
-DROP TABLE IF EXISTS producer_profiles CASCADE;
-DROP TABLE IF EXISTS client_profiles CASCADE;
+DROP TABLE IF EXISTS clients CASCADE;
+DROP TABLE IF EXISTS producers CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
--- =============================================
--- TABLE: users (Authentification)
--- =============================================
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(150) UNIQUE NOT NULL,
-    email VARCHAR(254) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('producer', 'client')),
-    phone VARCHAR(20),
-    is_active BOOLEAN DEFAULT TRUE,
-    is_staff BOOLEAN DEFAULT FALSE,
-    date_joined TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Drop function if exists
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
 
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-
--- =============================================
--- TABLE: producer_profiles
--- =============================================
-CREATE TABLE producer_profiles (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    shop_name VARCHAR(200) NOT NULL,
-    wilaya VARCHAR(100) NOT NULL,
-    commune VARCHAR(100) NOT NULL,
-    address TEXT,
-    bio_certified BOOLEAN DEFAULT FALSE,
-    avatar TEXT, -- Base64 encoded image
-    description TEXT,
-    rating DECIMAL(3,2) DEFAULT 0.00 CHECK (rating >= 0 AND rating <= 5),
-    total_sales INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_producer_user ON producer_profiles(user_id);
-CREATE INDEX idx_producer_wilaya ON producer_profiles(wilaya);
-
--- =============================================
--- TABLE: client_profiles
--- =============================================
-CREATE TABLE client_profiles (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    wilaya VARCHAR(100) NOT NULL,
-    commune VARCHAR(100),
-    address TEXT,
-    avatar TEXT, -- Base64 encoded image
-    total_orders INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_client_user ON client_profiles(user_id);
-CREATE INDEX idx_client_wilaya ON client_profiles(wilaya);
-
--- =============================================
--- TABLE: products
--- =============================================
-CREATE TABLE products (
-    id SERIAL PRIMARY KEY,
-    producer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(200) NOT NULL,
-    description TEXT,
-    photo_url TEXT, -- Base64 encoded image
-    price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
-    original_price DECIMAL(10,2), -- Pour anti-gaspi
-    sale_type VARCHAR(20) NOT NULL CHECK (sale_type IN ('unit', 'weight')),
-    unit VARCHAR(50) DEFAULT 'piece', -- kg, piece, liter, etc.
-    stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
-    product_type VARCHAR(50) NOT NULL CHECK (product_type IN ('vegetable', 'fruit', 'dairy', 'honey', 'meat', 'grain', 'other')),
-    is_anti_gaspi BOOLEAN DEFAULT FALSE,
-    discount_percentage INTEGER DEFAULT 0 CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
-    is_seasonal BOOLEAN DEFAULT FALSE,
-    season VARCHAR(20) CHECK (season IN ('winter', 'spring', 'summer', 'fall')),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_products_producer ON products(producer_id);
-CREATE INDEX idx_products_type ON products(product_type);
-CREATE INDEX idx_products_anti_gaspi ON products(is_anti_gaspi);
-CREATE INDEX idx_products_seasonal ON products(is_seasonal);
-CREATE INDEX idx_products_active ON products(is_active);
-CREATE INDEX idx_products_created ON products(created_at);
-
--- =============================================
--- TABLE: seasonal_baskets
--- =============================================
-CREATE TABLE seasonal_baskets (
-    id SERIAL PRIMARY KEY,
-    producer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(200) NOT NULL,
-    description TEXT,
-    discount_percentage INTEGER DEFAULT 0 CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
-    delivery_frequency VARCHAR(20) NOT NULL CHECK (delivery_frequency IN ('weekly', 'biweekly', 'monthly')),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_baskets_producer ON seasonal_baskets(producer_id);
-CREATE INDEX idx_baskets_active ON seasonal_baskets(is_active);
-
--- =============================================
--- TABLE: seasonal_basket_products (Many-to-Many)
--- =============================================
-CREATE TABLE seasonal_basket_products (
-    id SERIAL PRIMARY KEY,
-    basket_id INTEGER NOT NULL REFERENCES seasonal_baskets(id) ON DELETE CASCADE,
-    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(basket_id, product_id)
-);
-
-CREATE INDEX idx_basket_products_basket ON seasonal_basket_products(basket_id);
-CREATE INDEX idx_basket_products_product ON seasonal_basket_products(product_id);
-
--- =============================================
--- TABLE: subscriptions
--- =============================================
-CREATE TABLE subscriptions (
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    basket_id INTEGER NOT NULL REFERENCES seasonal_baskets(id) ON DELETE CASCADE,
-    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'cancelled')),
-    delivery_method VARCHAR(20) NOT NULL CHECK (delivery_method IN ('home_delivery', 'pickup')),
-    delivery_address TEXT,
-    next_delivery TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    cancelled_at TIMESTAMP,
-    paused_at TIMESTAMP
-);
-
-CREATE INDEX idx_subscriptions_client ON subscriptions(client_id);
-CREATE INDEX idx_subscriptions_basket ON subscriptions(basket_id);
-CREATE INDEX idx_subscriptions_status ON subscriptions(status);
-CREATE INDEX idx_subscriptions_next_delivery ON subscriptions(next_delivery);
-
--- =============================================
--- TABLE: cart_items
--- =============================================
-CREATE TABLE cart_items (
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(client_id, product_id)
-);
-
-CREATE INDEX idx_cart_client ON cart_items(client_id);
-CREATE INDEX idx_cart_product ON cart_items(product_id);
-
--- =============================================
--- TABLE: orders (Commandes)
--- =============================================
-CREATE TABLE orders (
-    id SERIAL PRIMARY KEY,
-    order_number VARCHAR(50) UNIQUE NOT NULL,
-    client_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    producer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    parent_order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
-    is_parent BOOLEAN DEFAULT FALSE,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),
-    total DECIMAL(10,2) NOT NULL CHECK (total >= 0),
-    delivery_method VARCHAR(20) NOT NULL CHECK (delivery_method IN ('home_delivery', 'pickup')),
-    delivery_address TEXT,
-    payment_method VARCHAR(20) DEFAULT 'cash_on_delivery',
-    notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    confirmed_at TIMESTAMP,
-    shipped_at TIMESTAMP,
-    delivered_at TIMESTAMP,
-    cancelled_at TIMESTAMP
-);
-
-CREATE INDEX idx_orders_number ON orders(order_number);
-CREATE INDEX idx_orders_client ON orders(client_id);
-CREATE INDEX idx_orders_producer ON orders(producer_id);
-CREATE INDEX idx_orders_parent ON orders(parent_order_id);
-CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_created ON orders(created_at);
-
--- =============================================
--- TABLE: order_items
--- =============================================
-CREATE TABLE order_items (
-    id SERIAL PRIMARY KEY,
-    order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    product_name VARCHAR(200) NOT NULL, -- Snapshot du nom
-    product_photo TEXT, -- Snapshot de la photo
-    quantity INTEGER NOT NULL CHECK (quantity > 0),
-    unit_price DECIMAL(10,2) NOT NULL CHECK (unit_price >= 0),
-    subtotal DECIMAL(10,2) NOT NULL CHECK (subtotal >= 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_order_items_order ON order_items(order_id);
-CREATE INDEX idx_order_items_product ON order_items(product_id);
-
--- =============================================
--- TRIGGERS pour updated_at automatique
--- =============================================
+-- ============================================
+-- CREATE HELPER FUNCTION
+-- ============================================
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -239,107 +32,264 @@ BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- ============================================
+-- USERS TABLE
+-- ============================================
 
-CREATE TRIGGER update_producer_profiles_updated_at BEFORE UPDATE ON producer_profiles
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_client_profiles_updated_at BEFORE UPDATE ON client_profiles
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_seasonal_baskets_updated_at BEFORE UPDATE ON seasonal_baskets
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON subscriptions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_cart_items_updated_at BEFORE UPDATE ON cart_items
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- =============================================
--- VUES UTILES
--- =============================================
-
--- Vue: Produits avec infos producteur
-CREATE OR REPLACE VIEW v_products_with_producer AS
-SELECT 
-    p.*,
-    u.username as producer_username,
-    pp.shop_name,
-    pp.wilaya,
-    pp.commune,
-    pp.phone,
-    pp.bio_certified,
-    pp.avatar as producer_avatar,
-    pp.rating as producer_rating
-FROM products p
-JOIN users u ON p.producer_id = u.id
-JOIN producer_profiles pp ON u.id = pp.user_id
-WHERE p.is_active = TRUE;
-
--- Vue: Paniers avec prix total
-CREATE OR REPLACE VIEW v_baskets_with_totals AS
-SELECT 
-    sb.*,
-    u.username as producer_username,
-    pp.shop_name,
-    pp.wilaya,
-    COUNT(sbp.id) as product_count,
-    SUM(p.price * sbp.quantity) as total_price,
-    SUM(p.price * sbp.quantity * (100 - sb.discount_percentage) / 100) as discounted_price
-FROM seasonal_baskets sb
-JOIN users u ON sb.producer_id = u.id
-JOIN producer_profiles pp ON u.id = pp.user_id
-LEFT JOIN seasonal_basket_products sbp ON sb.id = sbp.basket_id
-LEFT JOIN products p ON sbp.product_id = p.id
-GROUP BY sb.id, u.username, pp.shop_name, pp.wilaya;
-
--- Vue: Paniers clients avec totaux
-CREATE OR REPLACE VIEW v_cart_totals AS
-SELECT 
-    ci.client_id,
-    COUNT(ci.id) as item_count,
-    SUM(p.price * ci.quantity) as total
-FROM cart_items ci
-JOIN products p ON ci.product_id = p.id
-GROUP BY ci.client_id;
-
--- =============================================
--- DONNÉES INITIALES (Wilayas d'Algérie)
--- =============================================
-
--- Fonction pour faciliter le seeding des wilayas
-CREATE TABLE IF NOT EXISTS wilayas (
+CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    code VARCHAR(2) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('producer', 'client')),
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(20),
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    is_verified BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
-INSERT INTO wilayas (code, name) VALUES
-('01', 'Adrar'), ('02', 'Chlef'), ('03', 'Laghouat'), ('04', 'Oum El Bouaghi'),
-('05', 'Batna'), ('06', 'Béjaïa'), ('07', 'Biskra'), ('08', 'Béchar'),
-('09', 'Blida'), ('10', 'Bouira'), ('11', 'Tamanrasset'), ('12', 'Tébessa'),
-('13', 'Tlemcen'), ('14', 'Tiaret'), ('15', 'Tizi Ouzou'), ('16', 'Alger'),
-('17', 'Djelfa'), ('18', 'Jijel'), ('19', 'Sétif'), ('20', 'Saïda'),
-('21', 'Skikda'), ('22', 'Sidi Bel Abbès'), ('23', 'Annaba'), ('24', 'Guelma'),
-('25', 'Constantine'), ('26', 'Médéa'), ('27', 'Mostaganem'), ('28', 'M''Sila'),
-('29', 'Mascara'), ('30', 'Ouargla'), ('31', 'Oran'), ('32', 'El Bayadh'),
-('33', 'Illizi'), ('34', 'Bordj Bou Arréridj'), ('35', 'Boumerdès'), ('36', 'El Tarf'),
-('37', 'Tindouf'), ('38', 'Tissemsilt'), ('39', 'El Oued'), ('40', 'Khenchela'),
-('41', 'Souk Ahras'), ('42', 'Tipaza'), ('43', 'Mila'), ('44', 'Aïn Defla'),
-('45', 'Naâma'), ('46', 'Aïn Témouchent'), ('47', 'Ghardaïa'), ('48', 'Relizane');
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_user_type ON users(user_type);
+CREATE INDEX idx_users_is_active ON users(is_active);
 
-COMMENT ON TABLE users IS 'Table principale des utilisateurs (producteurs et clients)';
-COMMENT ON TABLE products IS 'Catalogue des produits avec support anti-gaspi';
-COMMENT ON TABLE seasonal_baskets IS 'Paniers saisonniers proposés par les producteurs';
-COMMENT ON TABLE subscriptions IS 'Abonnements des clients aux paniers saisonniers';
-COMMENT ON TABLE orders IS 'Commandes avec système parent-enfant pour multi-producteurs';
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- PRODUCERS TABLE
+-- ============================================
+
+CREATE TABLE producers (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    shop_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    photo_url VARCHAR(500),
+    address TEXT,
+    city VARCHAR(100),
+    wilaya VARCHAR(100),
+    methods TEXT,
+    is_bio_certified BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_producers_user_id ON producers(user_id);
+CREATE INDEX idx_producers_city ON producers(city);
+CREATE INDEX idx_producers_wilaya ON producers(wilaya);
+CREATE INDEX idx_producers_is_bio_certified ON producers(is_bio_certified);
+CREATE INDEX idx_producers_shop_name ON producers(shop_name);
+
+CREATE TRIGGER update_producers_updated_at
+    BEFORE UPDATE ON producers
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- CLIENTS TABLE
+-- ============================================
+
+CREATE TABLE clients (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    address TEXT,
+    city VARCHAR(100),
+    wilaya VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_clients_user_id ON clients(user_id);
+CREATE INDEX idx_clients_city ON clients(city);
+CREATE INDEX idx_clients_wilaya ON clients(wilaya);
+
+CREATE TRIGGER update_clients_updated_at
+    BEFORE UPDATE ON clients
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- PRODUCTS TABLE
+-- ============================================
+
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    producer_id INTEGER NOT NULL REFERENCES producers(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    photo_url VARCHAR(500),
+    sale_type VARCHAR(20) NOT NULL CHECK (sale_type IN ('unit', 'weight')),
+    price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
+    stock NUMERIC(10, 2) NOT NULL CHECK (stock >= 0),
+    product_type VARCHAR(20) NOT NULL CHECK (product_type IN ('fresh', 'processed', 'other')),
+    harvest_date DATE,
+    is_anti_gaspi BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_products_producer_id ON products(producer_id);
+CREATE INDEX idx_products_sale_type ON products(sale_type);
+CREATE INDEX idx_products_product_type ON products(product_type);
+CREATE INDEX idx_products_is_anti_gaspi ON products(is_anti_gaspi);
+CREATE INDEX idx_products_harvest_date ON products(harvest_date) WHERE product_type = 'fresh' AND harvest_date IS NOT NULL;
+CREATE INDEX idx_products_type_anti_gaspi ON products(product_type, is_anti_gaspi);
+
+CREATE TRIGGER update_products_updated_at
+    BEFORE UPDATE ON products
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================
+-- PRODUCT RATINGS TABLE
+-- ============================================
+
+CREATE TABLE product_ratings (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_product_rating UNIQUE(product_id, user_id)
+);
+
+CREATE INDEX idx_product_ratings_product ON product_ratings(product_id);
+CREATE INDEX idx_product_ratings_user ON product_ratings(user_id);
+
+-- ============================================
+-- PRODUCT RATING SUMMARY VIEW
+-- ============================================
+
+CREATE OR REPLACE VIEW product_rating_summary AS
+SELECT 
+    p.id AS product_id,
+    p.name AS product_name,
+    p.producer_id,
+    COUNT(pr.id) AS total_ratings,
+    COALESCE(ROUND(AVG(pr.rating), 1), 0) AS average_rating,
+    COUNT(CASE WHEN pr.rating = 5 THEN 1 END) AS five_star_count,
+    COUNT(CASE WHEN pr.rating = 4 THEN 1 END) AS four_star_count,
+    COUNT(CASE WHEN pr.rating = 3 THEN 1 END) AS three_star_count,
+    COUNT(CASE WHEN pr.rating = 2 THEN 1 END) AS two_star_count,
+    COUNT(CASE WHEN pr.rating = 1 THEN 1 END) AS one_star_count
+FROM products p
+LEFT JOIN product_ratings pr ON p.id = pr.product_id
+GROUP BY p.id, p.name, p.producer_id;
+
+-- ============================================
+-- PRODUCER RATING SUMMARY VIEW
+-- ============================================
+
+CREATE OR REPLACE VIEW producer_rating_summary AS
+SELECT
+    prod.id AS producer_id,
+    prod.shop_name::TEXT AS producer_name,
+    COUNT(DISTINCT p.id) AS total_products,
+    COUNT(pr.id) AS total_ratings,
+    COALESCE(ROUND(AVG(pr.rating), 1), 0) AS average_rating
+FROM producers prod
+INNER JOIN products p ON prod.id = p.producer_id
+LEFT JOIN product_ratings pr ON p.id = pr.product_id
+GROUP BY prod.id, prod.shop_name;
+
+-- ============================================
+-- SEASONAL BASKETS TABLE
+-- ============================================
+
+CREATE TABLE seasonal_baskets (
+    id SERIAL PRIMARY KEY,
+    producer_id INTEGER NOT NULL REFERENCES producers(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    photo_url TEXT,
+    discount_percentage NUMERIC(5, 2) NOT NULL CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
+    original_price NUMERIC(10, 2) NOT NULL CHECK (original_price >= 0),
+    discounted_price NUMERIC(10, 2) NOT NULL CHECK (discounted_price >= 0),
+    delivery_frequency VARCHAR(20) NOT NULL DEFAULT 'weekly' CHECK (delivery_frequency IN ('weekly', 'biweekly', 'monthly')),
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_seasonal_baskets_producer_id ON seasonal_baskets(producer_id);
+CREATE INDEX idx_seasonal_baskets_is_active ON seasonal_baskets(is_active);
+
+-- ============================================
+-- BASKET PRODUCTS (Many-to-Many)
+-- ============================================
+
+CREATE TABLE basket_products (
+    id SERIAL PRIMARY KEY,
+    basket_id INTEGER NOT NULL REFERENCES seasonal_baskets(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    quantity NUMERIC(10, 2) NOT NULL CHECK (quantity > 0),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UNIQUE(basket_id, product_id)
+);
+
+CREATE INDEX idx_basket_products_basket_id ON basket_products(basket_id);
+CREATE INDEX idx_basket_products_product_id ON basket_products(product_id);
+
+-- ============================================
+-- CLIENT SUBSCRIPTIONS TABLE
+-- ============================================
+
+CREATE TABLE client_subscriptions (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    basket_id INTEGER NOT NULL REFERENCES seasonal_baskets(id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'cancelled')),
+    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    next_delivery_date DATE,
+    delivery_method VARCHAR(50) NOT NULL CHECK (delivery_method IN ('pickup_producer', 'pickup_point')),
+    delivery_address TEXT,
+    pickup_point_id VARCHAR(100),
+    total_deliveries INTEGER DEFAULT 0 NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    cancelled_at TIMESTAMP,
+    UNIQUE(client_id, basket_id, status)
+);
+
+CREATE INDEX idx_client_subscriptions_client_id ON client_subscriptions(client_id);
+CREATE INDEX idx_client_subscriptions_basket_id ON client_subscriptions(basket_id);
+CREATE INDEX idx_client_subscriptions_status ON client_subscriptions(status);
+CREATE INDEX idx_client_subscriptions_next_delivery ON client_subscriptions(next_delivery_date);
+
+-- ============================================
+-- SUBSCRIPTION DELIVERIES (Tracking)
+-- ============================================
+
+CREATE TABLE subscription_deliveries (
+    id SERIAL PRIMARY KEY,
+    subscription_id INTEGER NOT NULL REFERENCES client_subscriptions(id) ON DELETE CASCADE,
+    delivery_date DATE NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'ready', 'picked_up', 'missed')),
+    picked_up_at TIMESTAMP,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_subscription_deliveries_subscription_id ON subscription_deliveries(subscription_id);
+CREATE INDEX idx_subscription_deliveries_status ON subscription_deliveries(status);
+CREATE INDEX idx_subscription_deliveries_delivery_date ON subscription_deliveries(delivery_date);
+
+-- ============================================
+-- SCRIPT COMPLETION
+-- ============================================
+
+-- Display success message
+DO $$ 
+BEGIN 
+    RAISE NOTICE 'DZ-Fellah database schema created successfully!';
+    RAISE NOTICE 'Tables created: users, producers, clients, products, product_ratings, seasonal_baskets, basket_products, client_subscriptions, subscription_deliveries';
+    RAISE NOTICE 'Views created: product_rating_summary, producer_rating_summary';
+END $$;
