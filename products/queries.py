@@ -345,14 +345,19 @@ def delete_product(product_id, producer_id):
     """
     Delete product (only if owned by producer).
     PostgreSQL: Uses RETURNING to get deleted product name.
+    Also removes any cart items referencing this product.
     """
-    sql = """
-        DELETE FROM products 
-        WHERE id = %s AND producer_id = %s 
-        RETURNING name
-    """
-    
     with connection.cursor() as cursor:
+        # First, delete any cart items referencing this product
+        # (cart_items table doesn't have FK constraint, so we need to clean up manually)
+        cursor.execute("DELETE FROM cart_items WHERE product_id = %s", [product_id])
+
+        # Now delete the product
+        sql = """
+            DELETE FROM products
+            WHERE id = %s AND producer_id = %s
+            RETURNING name
+        """
         cursor.execute(sql, [product_id, producer_id])
         result = cursor.fetchone()
         return result[0] if result else None
