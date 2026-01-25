@@ -662,12 +662,12 @@ def get_basket_with_products(basket_id):
         
         return basket
 def get_producer_baskets(producer_id, is_active=None):
-    """Get all baskets for a producer."""
+    """Get all baskets for a producer with products."""
     sql = """
-        SELECT 
-            sb.id, sb.name, sb.description, 
+        SELECT
+            sb.id, sb.name, sb.description,
             sb.discount_percentage, sb.original_price, sb.discounted_price,
-            sb.delivery_frequency, sb.is_active, sb.created_at,
+            sb.delivery_frequency, sb.is_active, sb.created_at, sb.pickup_day,
             p.photo_url as producer_banner,
             COUNT(DISTINCT cs.id) as subscriber_count,
             COUNT(DISTINCT bp.product_id) as product_count
@@ -678,25 +678,42 @@ def get_producer_baskets(producer_id, is_active=None):
         WHERE sb.producer_id = %s
     """
     params = [producer_id]
-    
+
     if is_active is not None:
         sql += " AND sb.is_active = %s"
         params.append(is_active)
-    
+
     sql += " GROUP BY sb.id, p.photo_url ORDER BY sb.created_at DESC"
-    
+
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
-        return dict_fetchall(cursor)
+        baskets = dict_fetchall(cursor)
+
+        # Fetch products for each basket
+        for basket in baskets:
+            products_sql = """
+                SELECT
+                    bp.quantity,
+                    prod.id, prod.name, prod.description, prod.photo_url, prod.price,
+                    prod.sale_type, prod.product_type
+                FROM basket_products bp
+                INNER JOIN products prod ON bp.product_id = prod.id
+                WHERE bp.basket_id = %s
+            """
+            cursor.execute(products_sql, [basket['id']])
+            basket['products'] = dict_fetchall(cursor)
+
+        return baskets
 
 def get_all_active_baskets(search=None, producer_id=None, limit=20):
-    """Get all active seasonal baskets (for clients to browse)."""
+    """Get all active seasonal baskets (for clients to browse) with products."""
     sql = """
-        SELECT 
+        SELECT
             sb.id, sb.name, sb.description,
             sb.discount_percentage, sb.original_price, sb.discounted_price,
-            sb.delivery_frequency, sb.created_at,
+            sb.delivery_frequency, sb.created_at, sb.pickup_day,
             p.id as producer_id, p.shop_name, p.city, p.wilaya, p.is_bio_certified,
+            p.photo_url as producer_banner,
             COUNT(DISTINCT cs.id) as subscriber_count,
             COUNT(DISTINCT bp.product_id) as product_count
         FROM seasonal_baskets sb
@@ -706,21 +723,37 @@ def get_all_active_baskets(search=None, producer_id=None, limit=20):
         WHERE sb.is_active = TRUE
     """
     params = []
-    
+
     if search:
         sql += " AND (sb.name ILIKE %s OR sb.description ILIKE %s)"
         params.extend([f'%{search}%', f'%{search}%'])
-    
+
     if producer_id:
         sql += " AND sb.producer_id = %s"
         params.append(producer_id)
-    
-    sql += " GROUP BY sb.id, p.id ORDER BY sb.created_at DESC LIMIT %s"
+
+    sql += " GROUP BY sb.id, p.id, p.photo_url ORDER BY sb.created_at DESC LIMIT %s"
     params.append(limit)
-    
+
     with connection.cursor() as cursor:
         cursor.execute(sql, params)
-        return dict_fetchall(cursor)
+        baskets = dict_fetchall(cursor)
+
+        # Fetch products for each basket
+        for basket in baskets:
+            products_sql = """
+                SELECT
+                    bp.quantity,
+                    prod.id, prod.name, prod.description, prod.photo_url, prod.price,
+                    prod.sale_type, prod.product_type
+                FROM basket_products bp
+                INNER JOIN products prod ON bp.product_id = prod.id
+                WHERE bp.basket_id = %s
+            """
+            cursor.execute(products_sql, [basket['id']])
+            basket['products'] = dict_fetchall(cursor)
+
+        return baskets
 
 
 
