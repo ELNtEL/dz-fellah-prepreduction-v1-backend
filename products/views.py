@@ -605,47 +605,54 @@ class MySeasonalBasketViewSet(viewsets.ViewSet):
             return Response({
                 'error': 'Basket not found'
             }, status=status.HTTP_404_NOT_FOUND)
-        
+
         serializer = SeasonalBasketSerializer(basket)
         return Response(serializer.data)
-    
+
     def update(self, request, pk=None):
         """
-        PUT/PATCH /api/my-seasonal-baskets/{id}/
+        PUT /api/my-seasonal-baskets/{id}/
         Update basket.
         """
         serializer = SeasonalBasketSerializer(data=request.data, partial=True)
-        
+
         if serializer.is_valid():
             updates = dict(serializer.validated_data)
-            
+
             basket = queries.update_basket(
                 pk,
                 request.user.producer_profile.id,
                 **updates
             )
-            
+
             if not basket:
                 return Response({
                     'error': 'Basket not found'
                 }, status=status.HTTP_404_NOT_FOUND)
-            
+
             result_serializer = SeasonalBasketSerializer(basket)
-            
+
             return Response({
                 'message': 'Basket updated successfully',
                 'basket': result_serializer.data
             })
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+    def partial_update(self, request, pk=None):
+        """
+        PATCH /api/my-seasonal-baskets/{id}/
+        Partial update basket.
+        """
+        return self.update(request, pk)
+
     def destroy(self, request, pk=None):
         """
         DELETE /api/my-seasonal-baskets/{id}/
         Delete basket.
         """
         basket_name = queries.delete_basket(pk, request.user.producer_profile.id)
-        
+
         if basket_name:
             return Response({
                 'message': f'Basket "{basket_name}" deleted successfully'
@@ -696,14 +703,21 @@ class MySeasonalBasketViewSet(viewsets.ViewSet):
             return Response({
                 'error': 'Basket not found'
             }, status=status.HTTP_404_NOT_FOUND)
-        
+
+        # Check if this is the last product - don't allow removal
+        products = basket.get('products', [])
+        if len(products) <= 1:
+            return Response({
+                'error': 'Cannot remove the last product. A basket must have at least 1 product.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         success = queries.remove_product_from_basket(pk, product_id)
-        
+
         if success:
             return Response({
                 'message': 'Product removed from basket'
             })
-        
+
         return Response({
             'error': 'Product not found in basket'
         }, status=status.HTTP_404_NOT_FOUND)
@@ -979,47 +993,54 @@ class MySeasonalBasketViewSet(viewsets.ViewSet):
             return Response({
                 'error': 'Basket not found'
             }, status=status.HTTP_404_NOT_FOUND)
-        
+
         serializer = SeasonalBasketSerializer(basket)
         return Response(serializer.data)
-    
+
     def update(self, request, pk=None):
         """
-        PUT/PATCH /api/my-seasonal-baskets/{id}/
+        PUT /api/my-seasonal-baskets/{id}/
         Update basket.
         """
         serializer = SeasonalBasketSerializer(data=request.data, partial=True)
-        
+
         if serializer.is_valid():
             updates = dict(serializer.validated_data)
-            
+
             basket = queries.update_basket(
                 pk,
                 request.user.producer_profile.id,
                 **updates
             )
-            
+
             if not basket:
                 return Response({
                     'error': 'Basket not found'
                 }, status=status.HTTP_404_NOT_FOUND)
-            
+
             result_serializer = SeasonalBasketSerializer(basket)
-            
+
             return Response({
                 'message': 'Basket updated successfully',
                 'basket': result_serializer.data
             })
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+    def partial_update(self, request, pk=None):
+        """
+        PATCH /api/my-seasonal-baskets/{id}/
+        Partial update basket.
+        """
+        return self.update(request, pk)
+
     def destroy(self, request, pk=None):
         """
         DELETE /api/my-seasonal-baskets/{id}/
         Delete basket.
         """
         basket_name = queries.delete_basket(pk, request.user.producer_profile.id)
-        
+
         if basket_name:
             return Response({
                 'message': f'Basket "{basket_name}" deleted successfully'
@@ -1070,14 +1091,21 @@ class MySeasonalBasketViewSet(viewsets.ViewSet):
             return Response({
                 'error': 'Basket not found'
             }, status=status.HTTP_404_NOT_FOUND)
-        
+
+        # Check if this is the last product - don't allow removal
+        products = basket.get('products', [])
+        if len(products) <= 1:
+            return Response({
+                'error': 'Cannot remove the last product. A basket must have at least 1 product.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         success = queries.remove_product_from_basket(pk, product_id)
-        
+
         if success:
             return Response({
                 'message': 'Product removed from basket'
             })
-        
+
         return Response({
             'error': 'Product not found in basket'
         }, status=status.HTTP_404_NOT_FOUND)
