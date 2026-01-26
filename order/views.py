@@ -243,6 +243,33 @@ class OrderViewSet(viewsets.ViewSet):
                 'error': 'Commande introuvable'
             }, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=True, methods=['delete'], url_path='delete_from_history')
+    def delete_from_history(self, request, pk=None):
+        """
+        DELETE /api/orders/{id}/delete_from_history/
+        Remove an order from client's history (only completed or cancelled orders).
+        """
+        try:
+            order = Order.objects.get(id=pk, client_id=request.user.id)
+
+            # Only allow deletion of completed or cancelled orders
+            if order.status not in ['completed', 'cancelled']:
+                return Response({
+                    'error': 'Only completed or cancelled orders can be removed from history'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            order_number = order.order_number
+            order.delete()
+
+            return Response({
+                'message': f'Order #{order_number} removed from history'
+            })
+
+        except Order.DoesNotExist:
+            return Response({
+                'error': 'Order not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+
 
 
 
@@ -445,4 +472,41 @@ class ProducerOrderViewSet(viewsets.ViewSet):
         except OrderItem.DoesNotExist:
             return Response({
                 'error': 'Item introuvable'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['delete'], url_path='delete_from_history')
+    def delete_from_history(self, request, pk=None):
+        """
+        DELETE /api/producer-orders/{id}/delete_from_history/
+        Remove a sub-order from producer's history (only completed or cancelled).
+        """
+        producer_id = self.get_producer_id(request)
+
+        if not producer_id:
+            return Response({
+                'error': 'Producer profile required'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            sub_order = SubOrder.objects.get(
+                id=pk,
+                producer_id=producer_id
+            )
+
+            # Only allow deletion of completed or cancelled orders
+            if sub_order.status not in ['completed', 'cancelled']:
+                return Response({
+                    'error': 'Only completed or cancelled orders can be removed from history'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            order_number = sub_order.parent_order.order_number
+            sub_order.delete()
+
+            return Response({
+                'message': f'Order #{order_number} removed from history'
+            })
+
+        except SubOrder.DoesNotExist:
+            return Response({
+                'error': 'Order not found'
             }, status=status.HTTP_404_NOT_FOUND)
