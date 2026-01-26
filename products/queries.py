@@ -793,11 +793,21 @@ def update_basket(basket_id, producer_id, **updates):
 
 
 def delete_basket(basket_id, producer_id):
-    """Delete a seasonal basket."""
-    sql = "DELETE FROM seasonal_baskets WHERE id = %s AND producer_id = %s RETURNING name"
-    
+    """Delete a seasonal basket. Cancels all active subscriptions first."""
     with connection.cursor() as cursor:
-        cursor.execute(sql, [basket_id, producer_id])
+        # First, cancel all active subscriptions for this basket
+        # This preserves the subscription records for client history
+        cursor.execute("""
+            UPDATE client_subscriptions
+            SET status = 'cancelled'
+            WHERE basket_id = %s AND status IN ('active', 'paused')
+        """, [basket_id])
+
+        # Now delete the basket
+        cursor.execute(
+            "DELETE FROM seasonal_baskets WHERE id = %s AND producer_id = %s RETURNING name",
+            [basket_id, producer_id]
+        )
         result = cursor.fetchone()
         return result[0] if result else None
 
