@@ -158,37 +158,51 @@ class AuthViewSet(viewsets.ViewSet):
         Login user and return JWT tokens.
         """
         serializer = LoginSerializer(data=request.data)
-        
+
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
-        
+        requested_user_type = request.data.get('user_type')  # 'client' or 'producer'
+
         # Get user with profile data
         user_data = queries.get_user_by_email(email)
-        
+
         if not user_data:
             return Response({
                 'error': 'Invalid email or password'
             }, status=status.HTTP_401_UNAUTHORIZED)
-        
+
         # Verify password
         if not queries.verify_password(user_data['password'], password):
             return Response({
                 'error': 'Invalid email or password'
             }, status=status.HTTP_401_UNAUTHORIZED)
-        
+
         # Check if account is active
         if not user_data['is_active']:
             return Response({
                 'error': 'Account is deactivated'
             }, status=status.HTTP_401_UNAUTHORIZED)
-        
+
+        # Validate user type matches if provided
+        if requested_user_type:
+            actual_user_type = user_data['user_type']
+            if requested_user_type != actual_user_type:
+                if requested_user_type == 'producer':
+                    return Response({
+                        'error': 'This account is not registered as a producer. Please switch to Consumer login.'
+                    }, status=status.HTTP_403_FORBIDDEN)
+                else:
+                    return Response({
+                        'error': 'This account is registered as a producer. Please switch to Producer login.'
+                    }, status=status.HTTP_403_FORBIDDEN)
+
         # Structure user data
         user_structured = queries.structure_user_data(user_data)
         tokens = get_tokens_for_user(user_structured)
-        
+
         return Response({
             'message': 'Login successful',
             'user': UserSerializer(user_structured).data,
