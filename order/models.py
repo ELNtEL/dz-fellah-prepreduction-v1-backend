@@ -89,12 +89,41 @@ class Order(models.Model):
         """Génère automatiquement le numéro de commande."""
         if not self.order_number:
             from datetime import datetime
+            import random
             date_str = datetime.now().strftime('%Y%m%d')
-            # Compte les commandes du jour
-            today_orders = Order.objects.filter(
-                order_number__startswith=f'DZF-{date_str}'
-            ).count()
-            self.order_number = f'DZF-{date_str}-{today_orders + 1:04d}'
+
+            # Find next available order number (handles gaps from deleted orders)
+            for attempt in range(100):  # Try up to 100 times
+                # Get the highest order number for today
+                last_order = Order.objects.filter(
+                    order_number__startswith=f'DZF-{date_str}'
+                ).order_by('-order_number').first()
+
+                if last_order:
+                    # Extract the sequence number from the last order
+                    try:
+                        last_seq = int(last_order.order_number.split('-')[-1])
+                        next_seq = last_seq + 1
+                    except (ValueError, IndexError):
+                        next_seq = 1
+                else:
+                    next_seq = 1
+
+                potential_number = f'DZF-{date_str}-{next_seq:04d}'
+
+                # Check if this number already exists
+                if not Order.objects.filter(order_number=potential_number).exists():
+                    self.order_number = potential_number
+                    break
+
+                # If exists (shouldn't happen), increment and try again
+                next_seq += 1
+            else:
+                # Fallback: use timestamp + random for guaranteed uniqueness
+                timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                random_suffix = random.randint(1000, 9999)
+                self.order_number = f'DZF-{timestamp}-{random_suffix}'
+
         super().save(*args, **kwargs)
     
     def get_sub_orders_count(self):
@@ -218,11 +247,37 @@ class SubOrder(models.Model):
     def save(self, *args, **kwargs):
         """Génère automatiquement le numéro de sous-commande."""
         if not self.sub_order_number:
-            # Compte les sous-commandes pour cette commande parent
-            sub_count = SubOrder.objects.filter(
-                parent_order=self.parent_order
-            ).count()
-            self.sub_order_number = f'{self.parent_order.order_number}-P{sub_count + 1}'
+            import random
+            # Find next available sub-order number
+            for attempt in range(100):
+                # Get the highest sub-order number for this parent order
+                last_sub = SubOrder.objects.filter(
+                    parent_order=self.parent_order
+                ).order_by('-sub_order_number').first()
+
+                if last_sub:
+                    try:
+                        # Extract the P number (e.g., "P3" from "DZF-20231215-001-P3")
+                        last_p = int(last_sub.sub_order_number.split('-P')[-1])
+                        next_p = last_p + 1
+                    except (ValueError, IndexError):
+                        next_p = 1
+                else:
+                    next_p = 1
+
+                potential_number = f'{self.parent_order.order_number}-P{next_p}'
+
+                # Check if this number already exists
+                if not SubOrder.objects.filter(sub_order_number=potential_number).exists():
+                    self.sub_order_number = potential_number
+                    break
+
+                next_p += 1
+            else:
+                # Fallback with random suffix
+                random_suffix = random.randint(100, 999)
+                self.sub_order_number = f'{self.parent_order.order_number}-P{random_suffix}'
+
         super().save(*args, **kwargs)
     
     def get_total(self):

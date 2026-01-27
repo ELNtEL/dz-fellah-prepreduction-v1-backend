@@ -914,9 +914,9 @@ def get_client_subscriptions(client_id, status=None):
 def get_basket_subscribers(basket_id, producer_id):
     """Get all subscribers for a basket (producer view)."""
     sql = """
-        SELECT 
+        SELECT
             cs.id as subscription_id, cs.status, cs.start_date, cs.next_delivery_date,
-            cs.total_deliveries, cs.delivery_method,
+            cs.total_deliveries, cs.delivery_method, cs.delivery_address, cs.pickup_point_id,
             c.id as client_id,
             u.first_name, u.last_name, u.email, u.phone
         FROM client_subscriptions cs
@@ -926,7 +926,7 @@ def get_basket_subscribers(basket_id, producer_id):
         WHERE cs.basket_id = %s AND sb.producer_id = %s
         ORDER BY cs.created_at DESC
     """
-    
+
     with connection.cursor() as cursor:
         cursor.execute(sql, [basket_id, producer_id])
         return dict_fetchall(cursor)

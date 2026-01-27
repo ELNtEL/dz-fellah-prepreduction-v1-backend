@@ -175,15 +175,17 @@ def get_producer_profile(user_id):
 
 def get_producer_profile_by_id(producer_id):
     """
-    Get producer profile by producer ID.
+    Get producer profile by producer ID with user details.
     """
     sql = """
-        SELECT id, user_id, shop_name, description, photo_url, address,
-               city, wilaya, methods, is_bio_certified, created_at, updated_at
-        FROM producers
-        WHERE id = %s
+        SELECT p.id, p.user_id, p.shop_name, p.description, p.photo_url, p.address,
+               p.city, p.wilaya, p.methods, p.is_bio_certified, p.created_at, p.updated_at,
+               u.first_name, u.last_name, u.phone, u.email
+        FROM producers p
+        INNER JOIN users u ON p.user_id = u.id
+        WHERE p.id = %s
     """
-    
+
     with connection.cursor() as cursor:
         cursor.execute(sql, [producer_id])
         return dict_fetchone(cursor)
