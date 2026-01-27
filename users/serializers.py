@@ -3,18 +3,23 @@ from rest_framework import serializers
 
 class ProducerProfileSerializer(serializers.Serializer):
     """Serializer for ProducerProfile."""
-    
+
     id = serializers.IntegerField(read_only=True)
     shop_name = serializers.CharField(max_length=255)
     description = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     photo_url = serializers.CharField(max_length=500, allow_null=True, required=False, allow_blank=True)
-    avatar = serializers.CharField(max_length=500, allow_null=True, required=False, allow_blank=True)  # NEW
+    avatar = serializers.CharField(max_length=500, allow_null=True, required=False, allow_blank=True)
     address = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     city = serializers.CharField(max_length=100, allow_null=True, required=False, allow_blank=True)
     wilaya = serializers.CharField(max_length=100, allow_null=True, required=False, allow_blank=True)
     methods = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     is_bio_certified = serializers.BooleanField(default=False)
     created_at = serializers.DateTimeField(read_only=True)
+    # Producer user info (from joined users table)
+    first_name = serializers.CharField(max_length=100, allow_null=True, required=False)
+    last_name = serializers.CharField(max_length=100, allow_null=True, required=False)
+    phone = serializers.CharField(max_length=20, allow_null=True, required=False)
+    email = serializers.EmailField(allow_null=True, required=False)
 
 
 class ClientProfileSerializer(serializers.Serializer):

@@ -423,11 +423,13 @@ class ProducerViewSet(viewsets.ViewSet):
         Get single producer detail.
         """
         producer = queries.get_producer_profile_by_id(pk)
-        
+
         if not producer:
             return Response({
                 'error': 'Producer not found'
             }, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer =ProducerProfileSerializer(producer)
-        return Response(serializer.data)
+
+        serializer = ProducerProfileSerializer(producer)
+        return Response({
+            'producer': serializer.data
+        })
