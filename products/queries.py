@@ -817,26 +817,57 @@ def delete_basket(basket_id, producer_id):
 # ============================================
 
 def create_subscription(client_id, basket_id, delivery_method, delivery_address=None, pickup_point_id=None):
-    """Create a new subscription."""
+    """Create a new subscription or reactivate a cancelled one."""
     from datetime import date, timedelta
-    
+
     next_delivery = date.today() + timedelta(days=7)  # First delivery in 7 days
-    
-    sql = """
-        INSERT INTO client_subscriptions (
-            client_id, basket_id, delivery_method, delivery_address,
-            pickup_point_id, next_delivery_date
-        ) VALUES (%s, %s, %s, %s, %s, %s)
-        RETURNING id, client_id, basket_id, status, start_date, next_delivery_date,
-                  delivery_method, delivery_address, pickup_point_id, created_at
-    """
-    
+
     with connection.cursor() as cursor:
-        cursor.execute(sql, [
-            client_id, basket_id, delivery_method, delivery_address,
-            pickup_point_id, next_delivery
-        ])
-        return dict_fetchone(cursor)
+        # First check if there's a cancelled subscription that can be reactivated
+        check_sql = """
+            SELECT id FROM client_subscriptions
+            WHERE client_id = %s AND basket_id = %s AND status = 'cancelled'
+            LIMIT 1
+        """
+        cursor.execute(check_sql, [client_id, basket_id])
+        existing = cursor.fetchone()
+
+        if existing:
+            # Reactivate the cancelled subscription
+            update_sql = """
+                UPDATE client_subscriptions
+                SET status = 'active',
+                    delivery_method = %s,
+                    delivery_address = %s,
+                    pickup_point_id = %s,
+                    next_delivery_date = %s,
+                    start_date = CURRENT_DATE,
+                    cancelled_at = NULL,
+                    updated_at = NOW()
+                WHERE id = %s
+                RETURNING id, client_id, basket_id, status, start_date, next_delivery_date,
+                          delivery_method, delivery_address, pickup_point_id, created_at
+            """
+            cursor.execute(update_sql, [
+                delivery_method, delivery_address, pickup_point_id,
+                next_delivery, existing[0]
+            ])
+            return dict_fetchone(cursor)
+        else:
+            # Create a new subscription
+            insert_sql = """
+                INSERT INTO client_subscriptions (
+                    client_id, basket_id, delivery_method, delivery_address,
+                    pickup_point_id, next_delivery_date
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING id, client_id, basket_id, status, start_date, next_delivery_date,
+                          delivery_method, delivery_address, pickup_point_id, created_at
+            """
+            cursor.execute(insert_sql, [
+                client_id, basket_id, delivery_method, delivery_address,
+                pickup_point_id, next_delivery
+            ])
+            return dict_fetchone(cursor)
 
 
 def get_client_subscriptions(client_id, status=None):
