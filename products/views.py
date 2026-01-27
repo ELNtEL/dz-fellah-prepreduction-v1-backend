@@ -35,15 +35,17 @@ class ProductViewSet(viewsets.ViewSet):
         product_type = request.query_params.get('product_type')
         is_anti_gaspi = request.query_params.get('is_anti_gaspi')
         is_anti_gaspi_bool = is_anti_gaspi.lower() == 'true' if is_anti_gaspi else None
+        is_seasonal = request.query_params.get('is_seasonal')
+        is_seasonal_bool = is_seasonal.lower() == 'true' if is_seasonal else None
         search = request.query_params.get('search')
         producer_search = request.query_params.get('producer_search')
-        
+
         limit = request.query_params.get('limit', 20)
         try:
             limit = int(limit)
         except:
             limit = 20
-        
+
         # Use advanced search if search parameters provided
         if search or producer_search:
             products = queries.search_products_advanced(
@@ -59,9 +61,14 @@ class ProductViewSet(viewsets.ViewSet):
                 is_anti_gaspi=is_anti_gaspi_bool,
                 limit=limit
             )
-        
+
+        # Add is_seasonal to each product
         for product in products:
             product['is_seasonal'] = is_product_in_season(product['name'])
+
+        # Filter by is_seasonal if requested
+        if is_seasonal_bool:
+            products = [p for p in products if p.get('is_seasonal')]
         
         serializer = ProductListSerializer(products, many=True)
         
@@ -75,6 +82,7 @@ class ProductViewSet(viewsets.ViewSet):
                 'producer_search': producer_search,
                 'product_type': product_type,
                 'is_anti_gaspi': is_anti_gaspi,
+                'is_seasonal': is_seasonal,
                 'limit': limit
             },
             'products': serializer.data

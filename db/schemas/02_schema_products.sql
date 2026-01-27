@@ -172,4 +172,18 @@ INNER JOIN products p ON prod.id = p.producer_id
 LEFT JOIN product_ratings pr ON p.id = pr.product_id
 GROUP BY prod.id, prod.shop_name;
 
---
+-- ============================================
+-- PRODUCT SEASONS TABLE (for seasonal badges)
+-- ============================================
+
+DROP TABLE IF EXISTS product_seasons CASCADE;
+
+CREATE TABLE product_seasons (
+    id SERIAL PRIMARY KEY,
+    product_name VARCHAR(255) NOT NULL UNIQUE,
+    start_month INTEGER NOT NULL CHECK (start_month >= 1 AND start_month <= 12),
+    end_month INTEGER NOT NULL CHECK (end_month >= 1 AND end_month <= 12),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE INDEX idx_product_seasons_name ON product_seasons(product_name);
